@@ -1,0 +1,1 @@
+# infoplus-integration-shopware-6-solution25
