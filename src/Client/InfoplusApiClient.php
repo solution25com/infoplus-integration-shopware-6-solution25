@@ -1,0 +1,344 @@
+<?php
+
+namespace InfoPlusCommerce\Client;
+
+use GuzzleHttp\Client;
+use InfoPlusCommerce\Service\ConfigService;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Throwable;
+
+class InfoplusApiClient
+{
+    private Client $httpClient;
+    private $userLimiter;
+    private $domainLimiter;
+
+    public function __construct(
+        private readonly ConfigService $configService,
+        private readonly LoggerInterface $logger,
+        RateLimiterFactory $userRateLimiterFactory,
+        RateLimiterFactory $domainRateLimiterFactory
+    ) {
+        $this->httpClient = new Client([
+            'base_uri' => rtrim($this->configService->get('baseDomain'), '/') . '/infoplus-wms/api/',
+            'timeout' => 10,
+        ]);
+        $this->userLimiter = $userRateLimiterFactory->create('infoplus_user');
+        $this->domainLimiter = $domainRateLimiterFactory->create('infoplus_domain_' . $this->configService->get('baseDomain'));
+    }
+
+    private function getHeaders(): array
+    {
+        return [
+            'API-Key' => $this->configService->get('apiKey'),
+            'Accept' => 'application/json',
+        ];
+    }
+
+    public function get(string $endpoint, array $query = []): ?array
+    {
+        $this->consumeRateLimit();
+        try {
+            $headers = $this->getHeaders();
+            $response = $this->httpClient->request('GET', $endpoint, [
+                'headers' => $headers,
+                'query' => $query,
+            ]);
+            $body = $response->getBody()->getContents();
+            $this->logger->info('[Infoplus GET]', [
+                'endpoint' => $endpoint,
+                'query' => $query,
+                'response' => $body
+            ]);
+            return json_decode($body, true);
+        } catch (Throwable $e) {
+            $this->logger->error('[Infoplus GET Error]', [
+                'endpoint' => $endpoint,
+                'message' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    private function consumeRateLimit(): void
+    {
+        $waited = false;
+        if (!$this->userLimiter->consume(1)->isAccepted()) {
+            $this->userLimiter->consume(1)->wait();
+            $waited = true;
+        }
+        if (!$waited && !$this->domainLimiter->consume(1)->isAccepted()) {
+            $this->domainLimiter->consume(1)->wait();
+        }
+    }
+
+    private function requestWithRetry(string $method, string $endpoint, array $options = [], int $maxAttempts = 3): array|string
+    {
+        $attempt = 1;
+        $delay = 1000000; // 1 second in microseconds
+
+        while ($attempt <= $maxAttempts) {
+            try {
+                $this->consumeRateLimit();
+                $headers = $this->getHeaders();
+                $options['headers'] = array_merge($options['headers'] ?? [], $headers);
+                $response = $this->httpClient->request($method, $endpoint, $options);
+                $body = $response->getBody()->getContents();
+                $this->logger->info("[Infoplus $method]", [
+                    'endpoint' => $endpoint,
+                    'options' => $options,
+                    'response' => $body
+                ]);
+                return json_decode($body, true);
+            } catch (Throwable $e) {
+                if ($attempt < $maxAttempts) {
+                    $this->logger->warning('[Infoplus API] Rate limit exceeded, retrying...', [
+                        'endpoint' => $endpoint,
+                        'method' => $method,
+                        'attempt' => $attempt,
+                        'message' => $e->getMessage(),
+                        'delay' => $delay / 1000000 . ' seconds'
+                    ]);
+                    usleep($delay);
+                    $delay *= 1.5; // Increase delay for next attempt
+                    $attempt++;
+                    continue;
+                }
+                if ($attempt === $maxAttempts) {
+                    $this->logger->error('[Infoplus API] Max retry attempts reached', [
+                        'endpoint' => $endpoint,
+                        'method' => $method,
+                        'attempt' => $attempt,
+                        'message' => $e->getMessage()
+                    ]);
+                    return $e->getMessage();
+                }
+                $this->logger->warning('[Infoplus API] Retry attempt ' . $attempt, [
+                    'endpoint' => $endpoint,
+                    'method' => $method,
+                    'message' => $e->getMessage()
+                ]);
+                usleep($delay);
+                $delay *= 1.5;
+                $attempt++;
+            }
+        }
+        return "Limit exceeded after $maxAttempts attempts";
+    }
+
+    public function request(string $method, string $endpoint, array $options = []): array|string
+    {
+        return $this->requestWithRetry($method, $endpoint, $options, $this->configService->get('maxRetryAttempts') ?? 3);
+    }
+
+    /**
+     * Fetches all pages of a search endpoint until no more data is returned.
+     *
+     * @param string $endpoint The API endpoint (e.g., 'v3.0/itemCategory/search')
+     * @param array $initialQuery Initial query parameters
+     * @param int $limit Maximum records per page (default 250)
+     * @return array All records combined from all pages
+     */
+    private function fetchAllPages(string $endpoint, array $initialQuery = [], int $limit = 250): array
+    {
+        $allRecords = [];
+        $page = 1;
+        if (isset($initialQuery['filter'])) {
+            $initialQuery['filter'] = $initialQuery['filter'] . " and lobId eq {$this->configService->get('lobId')}";
+        } else {
+            $initialQuery['filter'] = "lobId eq {$this->configService->get('lobId')}";
+        }
+        while (true) {
+            $query = array_merge($initialQuery, [
+                'page' => $page,
+                'limit' => $limit,
+            ]);
+
+            $response = $this->get($endpoint, $query);
+            if ($response === null || empty($response)) {
+                break; // No more data or error
+            }
+
+            $allRecords = array_merge($allRecords, $response);
+            $page++;
+
+            // Break if the last page has fewer records than the limit, indicating the end
+            if (count($response) < $limit) {
+                break;
+            }
+        }
+
+        $this->logger->info('[Infoplus fetchAllPages]', [
+            'endpoint' => $endpoint,
+            'totalRecords' => count($allRecords),
+            'pagesFetched' => $page - 1
+        ]);
+        return $allRecords;
+    }
+
+    public function getLineOfBusiness(): array
+    {
+        return $this->get('v3.0/lineOfBusiness/search') ?? [];
+    }
+
+    public function getWarehouses(): array
+    {
+        return $this->get('v3.0/warehouse/search') ?? [];
+    }
+
+    public function getCarriers(array $query = []): array
+    {
+        return $this->get('v3.0/carrier/search', $query) ?? [];
+    }
+
+    public function getItem(int $id): ?array
+    {
+        return $this->get('v3.0/item/' . $id);
+    }
+
+    public function searchItems(array $query = []): array
+    {
+        return $this->fetchAllPages('v3.0/item/search', $query);
+    }
+
+    public function getBySKU($lobId, $sku): ?array
+    {
+        $query = [
+            'lobId' => $lobId,
+            'sku' => $sku,
+        ];
+        return $this->get('v3.0/item/getBySKU', $query) ?? [];
+    }
+
+    public function createItem(array $data): array|string
+    {
+        return $this->request('POST', 'v3.0/item', ['json' => $data]);
+    }
+
+    public function updateItem(array $data): array|string
+    {
+        return $this->request('PUT', 'v3.0/item', ['json' => $data]);
+    }
+
+    public function deleteItem(int $id): array|string
+    {
+        return $this->request('DELETE', 'v3.0/item/' . $id);
+    }
+
+    public function searchItemCategories(array $query = []): array
+    {
+        return $this->fetchAllPages('v3.0/itemCategory/search', $query);
+    }
+
+    public function createItemCategory(array $data): array|string
+    {
+        return $this->request('POST', 'v3.0/itemCategory', ['json' => $data]);
+    }
+
+    public function updateItemCategory(array $data): array|string
+    {
+        return $this->request('PUT', 'v3.0/itemCategory', ['json' => $data]);
+    }
+
+    public function deleteItemCategory(int $id): array|string
+    {
+        return $this->request('DELETE', 'v3.0/itemCategory/' . $id);
+    }
+
+    public function deleteItemSubCategory(int $id): array|string
+    {
+        return $this->request('DELETE', 'v3.0/itemSubCategory/' . $id);
+    }
+
+    public function searchCustomers(array $query = []): array
+    {
+        return $this->fetchAllPages('v3.0/customer/search', $query);
+    }
+
+    public function getCustomerByCustomerNo($lobId, $customerNo): ?array
+    {
+        $query = [
+            'filter' => "lobId eq $lobId and customerNo eq '$customerNo'"
+        ];
+        $customers = $this->searchCustomers($query);
+        return !empty($customers) ? $customers[0] : null;
+    }
+
+    public function createCustomer(array $data): array|string
+    {
+        return $this->request('POST', 'v3.0/customer', ['json' => $data]);
+    }
+
+    public function updateCustomer(array $data): array|string
+    {
+        return $this->request('PUT', 'v3.0/customer', ['json' => $data]);
+    }
+
+    public function deleteCustomer(int $id): array|string
+    {
+        return $this->request('DELETE', 'v3.0/customer/' . $id);
+    }
+
+    public function searchOrders(array $query = []): array
+    {
+        return $this->fetchAllPages('v3.0/order/search', $query);
+    }
+
+    public function getOrderByOrderNo(int $orderNo): ?array
+    {
+        $query = ['filter' => "orderNo eq $orderNo"];
+        $orders = $this->searchOrders($query);
+        return !empty($orders) ? $orders[0] : null;
+    }
+
+    public function createOrder(array $data): array|string
+    {
+        return $this->request('POST', 'v3.0/order', ['json' => $data]);
+    }
+
+    public function updateOrder(array $data): array|string
+    {
+        return $this->request('PUT', 'v3.0/order', ['json' => $data]);
+    }
+
+    public function deleteOrder(int $id): array|string
+    {
+        return $this->request('DELETE', 'v3.0/order/' . $id);
+    }
+
+    public function searchInventoryAdjustments(array $query = []): array
+    {
+        return $this->fetchAllPages('v3.0/inventoryAdjustment/search', $query);
+    }
+
+    public function updateInventory(array $data): array|string
+    {
+        return $this->request('PUT', 'v3.0/inventory', ['json' => $data]);
+    }
+
+    public function setHttpClient(Client $client): void
+    {
+        $this->httpClient = $client;
+    }
+
+    public function getItemCategories(array $filter = []): ?array
+    {
+        return $this->fetchAllPages('v3.0/itemCategory/search', $filter);
+    }
+
+    public function getItemSubCategories(array $filter = []): ?array
+    {
+        return $this->fetchAllPages('v3.0/itemSubCategory/search', $filter);
+    }
+
+    public function createItemSubCategory(array $data): array|string
+    {
+        return $this->request('POST', 'v3.0/itemSubCategory', ['json' => $data]);
+    }
+
+    public function updateItemSubCategory(array $data): array|string
+    {
+        return $this->request('PUT', 'v3.0/itemSubCategory', ['json' => $data]);
+    }
+}

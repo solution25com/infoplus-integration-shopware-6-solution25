@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+    <card>
+        <title>InfoPlusCommerce Config</title>
+
+        <component name="sw-text-field">
+            <name>apiKey</name>
+            <label>API Key</label>
+            <required>true</required>
+        </component>
+
+        <component name="sw-text-field">
+            <name>baseDomain</name>
+            <label>Base Domain (https://xxx.infopluswms.com)</label>
+        </component>
+
+        <component name="sw-text-field">
+            <name>lobId</name>
+            <label>LOB ID</label>
+        </component>
+
+        <component name="sw-text-field">
+            <name>warehouseId</name>
+            <label>Warehouse ID</label>
+        </component>
+
+        <component name="sw-text-field">
+            <name>carrierId</name>
+            <label>Carrier ID</label>
+        </component>
+    </card>
+</config>

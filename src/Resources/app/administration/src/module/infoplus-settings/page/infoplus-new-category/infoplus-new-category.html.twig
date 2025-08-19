@@ -1,0 +1,35 @@
+<sw-page>
+    <template #content>
+        <sw-card-view>
+            <div class="infoplus-content">
+                <h1>{{ $tc('infoplus.category.addTitle') }}</h1>
+                <sw-text-field
+                        v-model:value="categoryName"
+                        :label="$tc('infoplus.category.name')"
+                        name="categoryName"
+                        :placeholder="$tc('infoplus.category.namePlaceholder')"
+                        :disabled="isLoading"
+                ></sw-text-field>
+                <sw-checkbox-field
+                        v-model:value="isSubCategory"
+                        :label="$tc('infoplus.category.subCategory')"
+                        name="isSubCategory"
+                        :disabled="isLoading"/>
+                <sw-button
+                        variant="primary"
+                        :disabled="isLoading"
+                        @click="saveCategory"
+                >
+                    {{ $tc('infoplus.category.save') }}
+                </sw-button>
+                <sw-button
+                        variant="ghost"
+                        :disabled="isLoading"
+                        @click="$router.back()"
+                >
+                    {{ $tc('infoplus.category.cancel') }}
+                </sw-button>
+            </div>
+        </sw-card-view>
+    </template>
+</sw-page>

@@ -1,0 +1,43 @@
+{
+    "name": "infoplus-commerce/infoplus-commerce",
+    "description": "info-plus-commerce/info-plus-commerce",
+    "type": "shopware-platform-plugin",
+    "version": "1.0.6",
+    "license": "MIT",
+    "require": {
+        "shopware/core": "~6.6.0",
+        "symfony/rate-limiter": "^7.1",
+        "php": ">=8.2",
+        "symfony/messenger": "^7.2"
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^3.7"
+    },
+    "extra": {
+        "shopware-plugin-class": "InfoPlusCommerce\\InfoPlusCommerce",
+        "label": {
+            "de-DE": "InfoPlus Commerce",
+            "en-GB": "InfoPlus Commerce"
+        },
+        "shopware-plugin": {
+            "administration": {
+                "path": "Resources/app/administration/src"
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "InfoPlusCommerce\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "InfoPlusCommerce\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "symfony/runtime": true
+        }
+    }
+}

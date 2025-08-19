@@ -1,0 +1,221 @@
+openapi: 3.0.3
+info:
+  title: Infoplus Shopware Integration API
+  version: 1.0.0
+paths:
+  /api/_action/infoplus/config:
+    get:
+      summary: Get Infoplus configuration
+      responses:
+        '200':
+          description: Configuration details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  apiKey: { type: string }
+                  baseDomain: { type: string }
+                  lobId: { type: string }
+                  warehouseId: { type: string }
+                  carrierId: { type: string }
+                  syncProducts: { type: boolean }
+                  syncCategories: { type: boolean }
+                  syncCustomers: { type: boolean }
+                  syncInventory: { type: boolean }
+                  syncOrders: { type: boolean }
+                  maxRetryAttempts: { type: integer }
+    post:
+      summary: Save Infoplus configuration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                apiKey: { type: string }
+                baseDomain: { type: string }
+                lobId: { type: string }
+                warehouseId: { type: string }
+                carrierId: { type: string }
+                syncProducts: { type: boolean }
+                syncCategories: { type: boolean }
+                syncCustomers: { type: boolean }
+                syncInventory: { type: boolean }
+                syncOrders: { type: boolean }
+                maxRetryAttempts: { type: integer }
+      responses:
+        '200':
+          description: Configuration saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+  /api/_action/infoplus/sync/products:
+    post:
+      summary: Sync products to Infoplus
+      responses:
+        '200':
+          description: Product sync triggered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  results: { type: array, items: { type: object } }
+  /api/_action/infoplus/sync/categories:
+    post:
+      summary: Sync categories to Infoplus
+      responses:
+        '200':
+          description: Category sync triggered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  results: { type: array, items: { type: object } }
+  /api/_action/infoplus/sync/customers:
+    post:
+      summary: Sync customers to Infoplus
+      responses:
+        '200':
+          description: Customer sync triggered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  results: { type: array, items: { type: object } }
+  /api/_action/infoplus/sync/inventory:
+    post:
+      summary: Sync inventory to Infoplus
+      responses:
+        '200':
+          description: Inventory sync triggered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  results: { type: array, items: { type: object } }
+  /api/_action/infoplus/sync/orders:
+    post:
+      summary: Sync orders to Infoplus
+      responses:
+        '200':
+          description: Order sync triggered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  results: { type: array, items: { type: object } }
+  /api/_action/infoplus/delete/item/{id}:
+    delete:
+      summary: Delete item in Infoplus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Item deletion status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+  /api/_action/infoplus/delete/category/{id}:
+    delete:
+      summary: Delete category in Infoplus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Category deletion status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+  /api/_action/infoplus/delete/customer/{id}:
+    delete:
+      summary: Delete customer in Infoplus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Customer deletion status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+  /api/_action/infoplus/delete/order/{id}:
+    delete:
+      summary: Delete order in Infoplus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Order deletion status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+  /api/_action/infoplus/lob-test:
+    get:
+      summary: Get lines of business from Infoplus
+      responses:
+        '200':
+          description: List of lines of business
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: object }
+  /api/_action/infoplus/warehouses:
+    get:
+      summary: Get warehouses from Infoplus
+      responses:
+        '200':
+          description: List of warehouses
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: object }
+  /api/_action/infoplus/carriers:
+    get:
+      summary: Get carriers from Infoplus
+      responses:
+        '200':
+          description: List of carriers
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: object }

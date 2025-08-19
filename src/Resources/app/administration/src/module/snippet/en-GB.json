@@ -1,0 +1,240 @@
+{
+  "infoplus": {
+    "mainMenuItemGeneral": "InfoPlus Sync",
+    "syncProducts": "Sync Products",
+    "syncCategories": "Sync Categories",
+    "syncCustomers": "Sync Customers",
+    "syncInventory": "Sync Inventory",
+    "syncOrders": "Sync Orders",
+    "settings": {
+      "title": "Infoplus Settings",
+      "description": "Manage settings for InfoPlus Commerce integration",
+      "syncSettings": "Sync Settings",
+      "categorySettings": "Infoplus Categories",
+      "subCategorySettings": "Infoplus Sub Categories",
+      "logInfo": "Log Info"
+    },
+    "category": {
+      "editTitle": "Edit Category",
+      "addTitle": "Add Category",
+      "name": "Category Name",
+      "namePlaceholder": "Enter category name",
+      "subCategory": "Sub Category",
+      "save": "Save",
+      "cancel": "Cancel",
+      "createNew": "Create New Category",
+      "edit": "Edit",
+      "delete": "Delete",
+      "columns": {
+        "infoplusId": "Infoplus ID",
+        "name": "Name"
+      }
+    },
+    "sync": {
+      "startSynchronization": "Start Synchronization",
+      "synchronizingInBackground": "Synchronizing in background...",
+      "lastSuccessfulSync": "Last Successful Sync:",
+      "neverSynchronized": "Never synchronized",
+      "synchronizationStarted": "Synchronization started successfully.",
+      "synchronizationFailed": "Synchronization failed:",
+      "success": "Success",
+      "configurationSaved": "Configuration saved.",
+      "syncRequirementNotice": "Sync Requirement Notice"
+    },
+    "common": {
+      "detailsCardTitle": "InfoPlus Details",
+      "syncWithInfoplus": "Sync with Infoplus",
+      "syncErrorTitle": "Sync Error",
+      "syncSuccessTitle": "Sync Successful",
+      "errorTitle": "Error"
+    },
+    "product": {
+      "selectCategoryLabel": "Select Category",
+      "selectCategoryPlaceholder": "Select a Category",
+      "selectSubCategoryLabel": "Select Sub Category",
+      "selectSubCategoryPlaceholder": "Select a Sub Category",
+      "syncing": "Syncing product with Infoplus...",
+      "syncedAtPrefix": "Product synced at",
+      "errors": {
+        "missingId": "Product ID is not available for syncing.",
+        "categoryRequired": "Category and subcategory selection is required.",
+        "failedToLoad": "Product could not be loaded:",
+        "failedToGetData": "Failed to get data:",
+        "failedToSync": "Failed to sync product:",
+        "failedToRetrieveInfo": "Failed to retrieve Infoplus information for the product."
+      }
+    },
+    "order": {
+      "syncing": "Syncing order with Infoplus...",
+      "syncedAtPrefix": "Order synced at",
+      "errors": {
+        "paymentNotPaid": "Order payment status is not \"paid\". Only paid orders can be synced.",
+        "missingId": "Order ID is not available for syncing.",
+        "failedToGetData": "Failed to get data:",
+        "failedToSync": "Failed to sync order:",
+        "failedToRetrieveInfo": "Failed to retrieve Infoplus information for the order."
+      }
+    },
+    "customer": {
+      "syncing": "Syncing customer with Infoplus...",
+      "syncedAtPrefix": "Customer synced at",
+      "errors": {
+        "missingId": "Customer ID is not available for syncing.",
+        "failedToGetData": "Failed to get data:",
+        "failedToSync": "Failed to sync customer:",
+        "failedToRetrieveInfo": "Failed to retrieve Infoplus information for the customer."
+      }
+    },
+    "categoryEntity": {
+      "syncing": "Syncing category with Infoplus...",
+      "syncedAtPrefix": "Category synced at",
+      "errors": {
+        "missingId": "Category ID is not available for syncing.",
+        "failedToGetData": "Failed to get data:",
+        "failedToSync": "Failed to sync category:",
+        "failedToRetrieveInfo": "Failed to retrieve Infoplus information for the category."
+      }
+    },
+    "api": {
+      "status": {
+        "configurationSaved": "configuration saved",
+        "productSyncCompleted": "product sync completed",
+        "categorySyncCompleted": "category sync completed",
+        "customerSyncCompleted": "customer sync completed",
+        "inventorySyncCompleted": "inventory sync completed",
+        "orderSyncCompleted": "order sync completed",
+        "syncCompleted": "sync completed",
+        "itemDeletionSucceeded": "item deletion succeeded",
+        "itemDeletionFailed": "item deletion failed",
+        "categoryDeletionSucceeded": "category deletion succeeded",
+        "categoryDeletionFailed": "category deletion failed",
+        "customerDeletionSucceeded": "customer deletion succeeded",
+        "customerDeletionFailed": "customer deletion failed",
+        "orderDeletionSucceeded": "order deletion succeeded",
+        "orderDeletionFailed": "order deletion failed",
+        "syncCommandStarted": "Sync command started",
+        "syncCommandFailed": "Failed to start sync command",
+        "categoryCreated": "Category created successfully",
+        "categoryUpdated": "Category updated successfully",
+        "categoryDeleted": "Category deleted successfully"
+      },
+      "errors": {
+        "configurationValidationFailed": "Configuration validation failed:",
+        "configurationSaveFailed": "Configuration save failed:",
+        "productSyncFailed": "Product sync failed:",
+        "categorySyncFailed": "Category sync failed:",
+        "customerSyncFailed": "Customer sync failed:",
+        "inventorySyncFailed": "Inventory sync failed:",
+        "orderSyncFailed": "Order sync failed:",
+        "syncFailed": "Sync failed:",
+        "itemDeletionFailed": "Item deletion failed:",
+        "categoryDeletionFailed": "Category deletion failed:",
+        "customerDeletionFailed": "Customer deletion failed:",
+        "orderDeletionFailed": "Order deletion failed:",
+        "lobTestFailed": "LOB test failed:",
+        "warehouseSyncFailed": "Warehouse sync failed:",
+        "carrierSyncFailed": "Carrier sync failed:",
+        "itemCategoriesFetchFailed": "Item categories fetch failed:",
+        "itemSubCategoriesFetchFailed": "Item subcategories fetch failed:",
+        "itemsFetchFailed": "Items fetch failed:",
+        "ordersFetchFailed": "Orders fetch failed:",
+        "customersFetchFailed": "Customers fetch failed:",
+        "inventoryFetchFailed": "Inventory fetch failed:",
+        "allCategoriesFetchFailed": "All categories fetch failed:",
+        "categoryCreationFailed": "Category creation failed:",
+        "categoryFetchFailed": "Category fetch failed:",
+        "categoryUpdateFailed": "Category update failed:",
+        "categoryNameRequired": "Category name is required.",
+        "categoryNotFound": "Category not found.",
+        "orderNotPaidOrAvailable": "Check if order is paid or available for sync",
+        "productNotAvailable": "Check if product is available for sync",
+        "customerNotAvailable": "Check if customer is available for sync",
+        "categoryNotAvailable": "Check if category is available for sync"
+      },
+      "validation": {
+        "orderRequiresCustomer": "If \"order\" is selected, \"customer\" must also be selected.",
+        "orderRequiresProduct": "If \"order\" is selected, \"product\" must also be selected.",
+        "orderRequiresCategory": "If \"order\" is selected, \"category\" must also be selected.",
+        "inventoryRequiresProduct": "If \"inventory\" is selected, \"product\" must also be selected."
+      }
+    },
+    "service": {
+      "errors": {
+        "categorySyncDisabled": "Category sync is disabled in configuration",
+        "noCategoriesFound": "No categories found for sync",
+        "productSyncDisabled": "Product sync is disabled in configuration",
+        "noProductsFound": "No products found for sync",
+        "customerSyncDisabled": "Customer sync is disabled in configuration",
+        "noCustomersFound": "No customers found for sync",
+        "inventorySyncDisabled": "Inventory sync is disabled in configuration",
+        "noProductsFoundForInventory": "No products found for sync inventory",
+        "orderSyncDisabled": "Order sync is disabled in configuration",
+        "noOrdersFound": "No orders found for sync",
+        "failedToFetchCarriers": "Failed to fetch carriers",
+        "failedToFetchItemBySku": "Failed to fetch item by SKU:",
+        "failedToUpdateProduct": "Failed to update product",
+        "failedToCreateProduct": "Failed to create product",
+        "failedToFetchCustomerByCustomerNo": "Failed to fetch customer by customerNo",
+        "failedToSyncCustomer": "Failed to sync customer",
+        "failedToSyncInventory": "Failed to sync inventory",
+        "failedToUpdateOrderSyncRecord": "Failed to update order sync record",
+        "failedToCreateOrderSyncRecord": "Failed to create order sync record",
+        "failedToDeleteItem": "Failed to delete item",
+        "failedToDeleteCustomer": "Failed to delete customer",
+        "failedToDeleteOrder": "Failed to delete order",
+        "failedToStartSyncCommand": "Failed to start sync command",
+        "failedToUpdateCategory": "Failed to update category",
+        "failedToCreateCategory": "Failed to create category in InfoPlus",
+        "failedToUpdateCategoryInInfoplus": "Failed to update category in InfoPlus"
+      }
+    },
+    "notifications": {
+      "errorTitle": "Error",
+      "successTitle": "Success",
+      "error": {
+        "fetchCategoriesFailed": "Failed to fetch categories: {message}",
+        "deleteCategoryFailed": "Failed to delete category: {message}",
+        "configLoadFailed": "An error occurred while loading the configuration.",
+        "configSaveFailed": "An error occurred while saving the configuration.",
+        "downloadFailed": "Download failed: {message}",
+        "categoryNameRequired": "Category name is required.",
+        "failedToFetchCategory": "Failed to fetch category: {message}",
+        "failedToUpdateCategory": "Failed to update category: {message}",
+        "failedToCreateCategory": "Failed to create category: {message}"
+      },
+      "success": {
+        "configSaved": "Configuration saved successfully.",
+        "categoryDeleted": "Category deleted successfully",
+        "categoryCreated": "Category created successfully",
+        "categoryUpdated": "Category updated successfully"
+      },
+      "info": {
+        "syncRequirementOrders": "To sync Orders, you must enable Sync Categories, Products, and Customers.",
+        "syncRequirementInventory": "To sync Inventory, you must enable Sync Products.",
+        "syncRequirementProducts": "To sync Products, you must enable Sync Categories."
+      },
+      "confirm": {
+        "deleteCategory": "Are you sure you want to delete this category?"
+      }
+    },
+    "logs": {
+      "noLogsAvailable": "No logs available.",
+      "columns": {
+        "file": "File Name"
+      },
+      "actions": {
+        "view": "View",
+        "download": "Download"
+      },
+      "errorLoadLogs": "Failed to load logs",
+      "back": "Back",
+      "download": "Download",
+      "title": "Log File: {file}",
+      "errors": {
+        "failedToLoadLog": "Failed to load log content: {details}",
+        "failedToLoadLogGeneric": "Failed to load log content",
+        "downloadFailed": "Download failed: {message}"
+      }
+    }
+  }
+}

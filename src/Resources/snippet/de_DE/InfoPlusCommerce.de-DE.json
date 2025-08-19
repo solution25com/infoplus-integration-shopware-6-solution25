@@ -1,0 +1,240 @@
+{
+  "infoplus": {
+    "mainMenuItemGeneral": "InfoPlus Sync",
+    "syncProducts": "Produkte synchronisieren",
+    "syncCategories": "Kategorien synchronisieren",
+    "syncCustomers": "Kunden synchronisieren",
+    "syncInventory": "Lagerbestand synchronisieren",
+    "syncOrders": "Bestellungen synchronisieren",
+    "settings": {
+      "title": "InfoPlus Einstellungen",
+      "description": "Einstellungen für InfoPlus Commerce Integration verwalten",
+      "syncSettings": "Synchronisationseinstellungen",
+      "categorySettings": "InfoPlus Kategorien",
+      "subCategorySettings": "InfoPlus Unterkategorien",
+      "logInfo": "Log Info"
+    },
+    "category": {
+      "editTitle": "Kategorie bearbeiten",
+      "addTitle": "Kategorie hinzufügen",
+      "name": "Kategoriename",
+      "namePlaceholder": "Kategoriename eingeben",
+      "subCategory": "Unterkategorie",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "createNew": "Neue Kategorie erstellen",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "columns": {
+        "infoplusId": "InfoPlus ID",
+        "name": "Name"
+      }
+    },
+    "sync": {
+      "startSynchronization": "Synchronisation starten",
+      "synchronizingInBackground": "Synchronisation läuft im Hintergrund...",
+      "lastSuccessfulSync": "Letzte erfolgreiche Synchronisation:",
+      "neverSynchronized": "Nie synchronisiert",
+      "synchronizationStarted": "Synchronisation erfolgreich gestartet.",
+      "synchronizationFailed": "Synchronisation fehlgeschlagen:",
+      "success": "Erfolg",
+      "configurationSaved": "Konfiguration gespeichert.",
+      "syncRequirementNotice": "Hinweis zur Sync-Anforderung"
+    },
+    "common": {
+      "detailsCardTitle": "InfoPlus Details",
+      "syncWithInfoplus": "Mit Infoplus synchronisieren",
+      "syncErrorTitle": "Synchronisationsfehler",
+      "syncSuccessTitle": "Synchronisation erfolgreich",
+      "errorTitle": "Fehler"
+    },
+    "product": {
+      "selectCategoryLabel": "Kategorie auswählen",
+      "selectCategoryPlaceholder": "Eine Kategorie auswählen",
+      "selectSubCategoryLabel": "Unterkategorie auswählen",
+      "selectSubCategoryPlaceholder": "Eine Unterkategorie auswählen",
+      "syncing": "Produkt wird mit Infoplus synchronisiert...",
+      "syncedAtPrefix": "Produkt synchronisiert am",
+      "errors": {
+        "missingId": "Produkt-ID ist für die Synchronisierung nicht verfügbar.",
+        "categoryRequired": "Kategorie und Unterkategorie Auswahl ist erforderlich.",
+        "failedToLoad": "Produkt konnte nicht geladen werden:",
+        "failedToGetData": "Daten konnten nicht abgerufen werden:",
+        "failedToSync": "Produkt konnte nicht synchronisiert werden:",
+        "failedToRetrieveInfo": "Infoplus-Informationen für das Produkt konnten nicht abgerufen werden."
+      }
+    },
+    "order": {
+      "syncing": "Bestellung wird mit Infoplus synchronisiert...",
+      "syncedAtPrefix": "Bestellung synchronisiert am",
+      "errors": {
+        "paymentNotPaid": "Zahlungsstatus der Bestellung ist nicht \"paid\". Nur bezahlte Bestellungen können synchronisiert werden.",
+        "missingId": "Bestell-ID ist für die Synchronisierung nicht verfügbar.",
+        "failedToGetData": "Daten konnten nicht abgerufen werden:",
+        "failedToSync": "Bestellung konnte nicht synchronisiert werden:",
+        "failedToRetrieveInfo": "Infoplus-Informationen für die Bestellung konnten nicht abgerufen werden."
+      }
+    },
+    "customer": {
+      "syncing": "Kunde wird mit Infoplus synchronisiert...",
+      "syncedAtPrefix": "Kunde synchronisiert am",
+      "errors": {
+        "missingId": "Kunden-ID ist für die Synchronisierung nicht verfügbar.",
+        "failedToGetData": "Daten konnten nicht abgerufen werden:",
+        "failedToSync": "Kunde konnte nicht synchronisiert werden:",
+        "failedToRetrieveInfo": "Infoplus-Informationen für den Kunden konnten nicht abgerufen werden."
+      }
+    },
+    "categoryEntity": {
+      "syncing": "Kategorie wird mit Infoplus synchronisiert...",
+      "syncedAtPrefix": "Kategorie synchronisiert am",
+      "errors": {
+        "missingId": "Kategorie-ID ist für die Synchronisierung nicht verfügbar.",
+        "failedToGetData": "Daten konnten nicht abgerufen werden:",
+        "failedToSync": "Kategorie konnte nicht synchronisiert werden:",
+        "failedToRetrieveInfo": "Infoplus-Informationen für die Kategorie konnten nicht abgerufen werden."
+      }
+    },
+    "api": {
+      "status": {
+        "configurationSaved": "Konfiguration gespeichert",
+        "productSyncCompleted": "Produktsynchronisation abgeschlossen",
+        "categorySyncCompleted": "Kategoriesynchronisation abgeschlossen",
+        "customerSyncCompleted": "Kundensynchronisation abgeschlossen",
+        "inventorySyncCompleted": "Lagerbestandssynchronisation abgeschlossen",
+        "orderSyncCompleted": "Bestellsynchronisation abgeschlossen",
+        "syncCompleted": "Synchronisation abgeschlossen",
+        "itemDeletionSucceeded": "Artikel-Löschung erfolgreich",
+        "itemDeletionFailed": "Artikel-Löschung fehlgeschlagen",
+        "categoryDeletionSucceeded": "Kategorie-Löschung erfolgreich",
+        "categoryDeletionFailed": "Kategorie-Löschung fehlgeschlagen",
+        "customerDeletionSucceeded": "Kunde-Löschung erfolgreich",
+        "customerDeletionFailed": "Kunde-Löschung fehlgeschlagen",
+        "orderDeletionSucceeded": "Bestellung-Löschung erfolgreich",
+        "orderDeletionFailed": "Bestellung-Löschung fehlgeschlagen",
+        "syncCommandStarted": "Synchronisationsbefehl gestartet",
+        "syncCommandFailed": "Synchronisationsbefehl konnte nicht gestartet werden",
+        "categoryCreated": "Kategorie erfolgreich erstellt",
+        "categoryUpdated": "Kategorie erfolgreich aktualisiert",
+        "categoryDeleted": "Kategorie erfolgreich gelöscht"
+      },
+      "errors": {
+        "configurationValidationFailed": "Konfigurationsvalidierung fehlgeschlagen:",
+        "configurationSaveFailed": "Konfigurationsspeicherung fehlgeschlagen:",
+        "productSyncFailed": "Produktsynchronisation fehlgeschlagen:",
+        "categorySyncFailed": "Kategoriesynchronisation fehlgeschlagen:",
+        "customerSyncFailed": "Kundensynchronisation fehlgeschlagen:",
+        "inventorySyncFailed": "Lagerbestandssynchronisation fehlgeschlagen:",
+        "orderSyncFailed": "Bestellsynchronisation fehlgeschlagen:",
+        "syncFailed": "Synchronisation fehlgeschlagen:",
+        "itemDeletionFailed": "Artikel-Löschung fehlgeschlagen:",
+        "categoryDeletionFailed": "Kategorie-Löschung fehlgeschlagen:",
+        "customerDeletionFailed": "Kunde-Löschung fehlgeschlagen:",
+        "orderDeletionFailed": "Bestellung-Löschung fehlgeschlagen:",
+        "lobTestFailed": "LOB-Test fehlgeschlagen:",
+        "warehouseSyncFailed": "Lager-Synchronisation fehlgeschlagen:",
+        "carrierSyncFailed": "Versanddienstleister-Synchronisation fehlgeschlagen:",
+        "itemCategoriesFetchFailed": "Artikel-Kategorien Abruf fehlgeschlagen:",
+        "itemSubCategoriesFetchFailed": "Artikel-Unterkategorien Abruf fehlgeschlagen:",
+        "itemsFetchFailed": "Artikel Abruf fehlgeschlagen:",
+        "ordersFetchFailed": "Bestellungen Abruf fehlgeschlagen:",
+        "customersFetchFailed": "Kunden Abruf fehlgeschlagen:",
+        "inventoryFetchFailed": "Lagerbestand Abruf fehlgeschlagen:",
+        "allCategoriesFetchFailed": "Alle Kategorien Abruf fehlgeschlagen:",
+        "categoryCreationFailed": "Kategorie-Erstellung fehlgeschlagen:",
+        "categoryFetchFailed": "Kategorie Abruf fehlgeschlagen:",
+        "categoryUpdateFailed": "Kategorie-Aktualisierung fehlgeschlagen:",
+        "categoryNameRequired": "Kategoriename ist erforderlich.",
+        "categoryNotFound": "Kategorie nicht gefunden.",
+        "orderNotPaidOrAvailable": "Prüfen Sie, ob die Bestellung bezahlt oder für die Synchronisierung verfügbar ist",
+        "productNotAvailable": "Prüfen Sie, ob das Produkt für die Synchronisierung verfügbar ist",
+        "customerNotAvailable": "Prüfen Sie, ob der Kunde für die Synchronisierung verfügbar ist",
+        "categoryNotAvailable": "Prüfen Sie, ob die Kategorie für die Synchronisierung verfügbar ist"
+      },
+      "validation": {
+        "orderRequiresCustomer": "Wenn \"Bestellung\" ausgewählt ist, muss auch \"Kunde\" ausgewählt sein.",
+        "orderRequiresProduct": "Wenn \"Bestellung\" ausgewählt ist, muss auch \"Produkt\" ausgewählt sein.",
+        "orderRequiresCategory": "Wenn \"Bestellung\" ausgewählt ist, muss auch \"Kategorie\" ausgewählt sein.",
+        "inventoryRequiresProduct": "Wenn \"Lagerbestand\" ausgewählt ist, muss auch \"Produkt\" ausgewählt sein."
+      }
+    },
+    "service": {
+      "errors": {
+        "categorySyncDisabled": "Kategoriesynchronisation ist in der Konfiguration deaktiviert",
+        "noCategoriesFound": "Keine Kategorien für die Synchronisierung gefunden",
+        "productSyncDisabled": "Produktsynchronisation ist in der Konfiguration deaktiviert",
+        "noProductsFound": "Keine Produkte für die Synchronisierung gefunden",
+        "customerSyncDisabled": "Kundensynchronisation ist in der Konfiguration deaktiviert",
+        "noCustomersFound": "Keine Kunden für die Synchronisierung gefunden",
+        "inventorySyncDisabled": "Lagerbestandssynchronisation ist in der Konfiguration deaktiviert",
+        "noProductsFoundForInventory": "Keine Produkte für die Lagerbestandssynchronisierung gefunden",
+        "orderSyncDisabled": "Bestellsynchronisation ist in der Konfiguration deaktiviert",
+        "noOrdersFound": "Keine Bestellungen für die Synchronisierung gefunden",
+        "failedToFetchCarriers": "Versanddienstleister konnten nicht abgerufen werden",
+        "failedToFetchItemBySku": "Artikel konnte nicht anhand der SKU abgerufen werden:",
+        "failedToUpdateProduct": "Produkt konnte nicht aktualisiert werden",
+        "failedToCreateProduct": "Produkt konnte nicht erstellt werden",
+        "failedToFetchCustomerByCustomerNo": "Kunde konnte nicht anhand der Kundennummer abgerufen werden",
+        "failedToSyncCustomer": "Kunde konnte nicht synchronisiert werden",
+        "failedToSyncInventory": "Lagerbestand konnte nicht synchronisiert werden",
+        "failedToUpdateOrderSyncRecord": "Bestellsynchronisationsdatensatz konnte nicht aktualisiert werden",
+        "failedToCreateOrderSyncRecord": "Bestellsynchronisationsdatensatz konnte nicht erstellt werden",
+        "failedToDeleteItem": "Artikel konnte nicht gelöscht werden",
+        "failedToDeleteCustomer": "Kunde konnte nicht gelöscht werden",
+        "failedToDeleteOrder": "Bestellung konnte nicht gelöscht werden",
+        "failedToStartSyncCommand": "Synchronisationsbefehl konnte nicht gestartet werden",
+        "failedToUpdateCategory": "Kategorie konnte nicht aktualisiert werden",
+        "failedToCreateCategory": "Kategorie konnte nicht in InfoPlus erstellt werden",
+        "failedToUpdateCategoryInInfoplus": "Kategorie konnte nicht in InfoPlus aktualisiert werden"
+      }
+    },
+    "notifications": {
+      "errorTitle": "Fehler",
+      "successTitle": "Erfolg",
+      "error": {
+        "fetchCategoriesFailed": "Kategorien konnten nicht abgerufen werden: {message}",
+        "deleteCategoryFailed": "Kategorie konnte nicht gelöscht werden: {message}",
+        "configLoadFailed": "Ein Fehler ist beim Laden der Konfiguration aufgetreten.",
+        "configSaveFailed": "Ein Fehler ist beim Speichern der Konfiguration aufgetreten.",
+        "downloadFailed": "Download fehlgeschlagen: {message}",
+        "categoryNameRequired": "Kategoriename ist erforderlich.",
+        "failedToFetchCategory": "Kategorie konnte nicht abgerufen werden: {message}",
+        "failedToUpdateCategory": "Kategorie konnte nicht aktualisiert werden: {message}",
+        "failedToCreateCategory": "Kategorie konnte nicht erstellt werden: {message}"
+      },
+      "success": {
+        "configSaved": "Konfiguration erfolgreich gespeichert.",
+        "categoryDeleted": "Kategorie erfolgreich gelöscht",
+        "categoryCreated": "Kategorie erfolgreich erstellt",
+        "categoryUpdated": "Kategorie erfolgreich aktualisiert"
+      },
+      "info": {
+        "syncRequirementOrders": "Um Bestellungen zu synchronisieren, müssen Kategorien, Produkte und Kunden aktiviert sein.",
+        "syncRequirementInventory": "Um Lagerbestand zu synchronisieren, müssen Produkte aktiviert sein.",
+        "syncRequirementProducts": "Um Produkte zu synchronisieren, müssen Kategorien aktiviert sein."
+      },
+      "confirm": {
+        "deleteCategory": "Sind Sie sicher, dass Sie diese Kategorie löschen möchten?"
+      }
+    },
+    "logs": {
+      "noLogsAvailable": "Keine Logs verfügbar.",
+      "columns": {
+        "file": "Dateiname"
+      },
+      "actions": {
+        "view": "Anzeigen",
+        "download": "Herunterladen"
+      },
+      "errorLoadLogs": "Logs konnten nicht geladen werden",
+      "back": "Zurück",
+      "download": "Herunterladen",
+      "title": "Log-Datei: {file}",
+      "errors": {
+        "failedToLoadLog": "Log-Inhalt konnte nicht geladen werden: {details}",
+        "failedToLoadLogGeneric": "Log-Inhalt konnte nicht geladen werden",
+        "downloadFailed": "Download fehlgeschlagen: {message}"
+      }
+    }
+  }
+}

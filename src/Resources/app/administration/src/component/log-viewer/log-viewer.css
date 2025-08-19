@@ -1,0 +1,25 @@
+.infoplus-log-entry {
+  margin-bottom: 20px;
+}
+
+.logs-title {
+  margin: 0 0 8px;
+  color: #000;
+}
+
+.logs-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+  font-size: 14px;
+  color: #565555;
+  padding: 12px;
+  border-radius: 4px;
+}
+
+.log-meta {
+  color: #171717;
+  font-weight: 500;
+}
+
+/*# sourceMappingURL=log-viewer.css.map */

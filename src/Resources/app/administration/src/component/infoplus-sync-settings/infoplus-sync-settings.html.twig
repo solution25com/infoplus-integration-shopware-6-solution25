@@ -1,0 +1,17 @@
+<template>
+    <sw-container>
+        <sw-card :title="$tc('infoplus.settings.syncSettings')" :isLoading="isLoading"
+                 style="margin-top:20px;">
+            <infoplus-switch :label="$tc('infoplus.syncCategories')"
+                             name="InfoPlusCommerce.config.syncCategories" style="margin-top:-10px;"/>
+            <infoplus-switch :label="$tc('infoplus.syncProducts')"
+                             name="InfoPlusCommerce.config.syncProducts"/>
+            <infoplus-switch :label="$tc('infoplus.syncCustomers')"
+                             name="InfoPlusCommerce.config.syncCustomers"/>
+            <infoplus-switch :label="$tc('infoplus.syncOrders')" name="InfoPlusCommerce.config.syncOrders"/>
+            <infoplus-switch :label="$tc('infoplus.syncInventory')"
+                             name="InfoPlusCommerce.config.syncInventory"/>
+            <sync-button/>
+        </sw-card>
+    </sw-container>
+</template>

@@ -1,0 +1,33 @@
+<template>
+    <div class="infoplus-categories">
+        <div class="infoplus-content" style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+            <sw-button
+                    variant="primary"
+                    @click="addNewCategory"
+            >
+                {{ $tc('infoplus.category.createNew') }}
+            </sw-button>
+        </div>
+        <sw-card>
+            <sw-data-grid
+                    :dataSource="categories"
+                    :actions="true"
+                    :columns="[
+                    { property: 'internalId', label: $tc('infoplus.category.columns.infoplusId') },
+                    { property: 'name', label: $tc('infoplus.category.columns.name') }
+                    ]"
+                    :showSelection="false"
+            >
+                <template #actions="{ item }">
+
+                    <sw-context-menu-item @click="editCategory(item)">
+                        {{ $tc('infoplus.category.edit') }}
+                    </sw-context-menu-item>
+                    <sw-context-menu-item @click="deleteCategory(item)">
+                        {{ $tc('infoplus.category.delete') }}
+                    </sw-context-menu-item>
+                </template>
+            </sw-data-grid>
+        </sw-card>
+    </div>
+</template>

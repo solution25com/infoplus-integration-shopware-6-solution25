@@ -1,0 +1,26 @@
+@import "~scss/variables";
+
+.infoplus_message {
+
+}
+.infoplus_button {
+    float: right;
+    margin-right: 10px;
+}
+
+
+.sw-flow-list__tab {
+    max-width: $content-width;
+    margin: 0 auto;
+}
+
+.sw-flow-detail {
+    .sw-card-view .sw-card-view__content {
+        overflow: auto;
+    }
+}
+
+.infoplus-content {
+    max-width: $content-width;
+    margin: 0 auto;
+}
