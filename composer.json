@@ -2,7 +2,7 @@
     "name": "infoplus-commerce/infoplus-commerce",
     "description": "info-plus-commerce/info-plus-commerce",
     "type": "shopware-platform-plugin",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "license": "MIT",
     "require": {
         "shopware/core": "~6.6.0",

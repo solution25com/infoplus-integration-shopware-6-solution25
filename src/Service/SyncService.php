@@ -5,6 +5,7 @@ namespace InfoPlusCommerce\Service;
 use InfoPlusCommerce\Client\InfoplusApiClient;
 use InfoPlusCommerce\Message\SyncOrdersMessage;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Checkout\Order\OrderEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Metric\MaxAggregation;
@@ -12,6 +13,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\StateMachine\StateMachineRegistry;
+use Shopware\Core\System\StateMachine\Transition;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
@@ -27,6 +30,7 @@ class SyncService
         private readonly EntityRepository  $orderRepository,
         private readonly IdMappingService  $idMappingService,
         private readonly TranslatorInterface $translator,
+        private readonly StateMachineRegistry $stateMachineRegistry,
     )
     {
     }
@@ -451,7 +455,8 @@ class SyncService
                         $results[] = [
                             'sku' => $sku,
                             'success' => true,
-                            'message' => 'Product updated successfully'
+                            'message' => 'Product updated successfully',
+                            'inventrorySync' => $this->syncInventory($context, [$product->getId()])
                         ];
                     } else {
                         $this->logger->error('[InfoPlus] Failed to update product', [
@@ -472,7 +477,8 @@ class SyncService
                         $results[] = [
                             'sku' => $sku,
                             'success' => true,
-                            'message' => 'Product created successfully'
+                            'message' => 'Product created successfully',
+                            'inventrorySync' => $this->syncInventory($context, [$product->getId()])
                         ];
                     } else {
                         $this->logger->error('[InfoPlus] Failed to create product', [
@@ -621,39 +627,103 @@ class SyncService
             $this->logger->info('[InfoPlus] Inventory sync is disabled in configuration');
             return ['status' => 'error', 'error' => $this->translator->trans('infoplus.service.errors.inventorySyncDisabled')];
         }
-        $this->logger->info('[InfoPlus] Sync inventory triggered', ['ids' => $ids ?? 'all']);
         $criteria = new Criteria($ids);
-        $products = $this->productRepository->search($criteria, $context)->getEntities();
-
+        $products = $this->productRepository->search($criteria, $context);
         if ($products->count() === 0) {
-            $this->logger->warning('[InfoPlus] No products found for sync inventory', ['ids' => $ids ?? 'all']);
+            $this->logger->info("[InfoPlus] No active products found, skipping inventory sync.");
             return ['status' => 'error', 'error' => $this->translator->trans('infoplus.service.errors.noProductsFoundForInventory')];
         }
-
-        $results = [];
+        $skus = [];
         foreach ($products as $product) {
-            $data = [
-                'id' => $this->idMappingService->getInfoplusId('item', $product->getId(), $context),
-                'sku' => $product->getProductNumber(),
-                'qty' => $product->getStock(),
-                'lobId' => $this->configService->get('lobId'),
-                'adjustmentDate' => (new \DateTime())->format('Y-m-d\TH:i:s\Z'),
-                'adjustmentTime' => (new \DateTime())->format('H:i:s'),
-            ];
-            $result = $this->infoplusApiClient->updateInventory($data);
-            $results[] = [
-                'itemId' => $data['id'],
-                'success' => is_array($result),
-                'error' => is_string($result) ? $result : null
-            ];
-            if (is_string($result)) {
-                $this->logger->error('[InfoPlus] Failed to sync inventory', [
-                    'itemId' => $data['id'],
-                    'error' => $result
-                ]);
+            if ($product->getProductNumber()) {
+                $skus[] = $product->getProductNumber();
             }
         }
-        return $results;
+        $query = ['filter' => 'sku in (\'' . implode('\',\'', $skus) . '\')'];
+        $infoPlusInventory = $this->getItems($query);
+        $returnArray = [];
+        foreach ($infoPlusInventory as $infoPlusItem) {
+            $returnArray[] = $this->processProduct($infoPlusItem, $context);
+        }
+        return $returnArray;
+    }
+
+    private function processProduct(array $infoPlusItem, Context $context): array
+    {
+        $infoPlusProductId = $infoPlusItem['id'] ?? null;
+        $newStock = $infoPlusItem['availableQuantity'] ?? 0;
+
+        if (!$infoPlusProductId) {
+            $this->logger->warning("Invalid InfoPlus product data: ID missing");
+            return [
+                'success' => false,
+                'product' => $infoPlusItem['sku'],
+                'message' => "No stock change",
+                'error' => 'Invalid InfoPlus product data: ID missing'
+            ];
+        }
+        //get product id by $infoPlusItem['sku']
+        if (!isset($infoPlusItem['sku'])) {
+            $this->logger->warning("Invalid InfoPlus product data: SKU missing for product ID {$infoPlusProductId}");
+            return [
+                'success' => false,
+                'product' => $infoPlusItem['sku'],
+                'message' => "No stock change",
+                'error' => "Invalid InfoPlus product data: SKU missing for product ID {$infoPlusProductId}"
+            ];
+        }
+        $infoPlusProductSku = $infoPlusItem['sku'];
+
+        try {
+            $criteria = new Criteria();
+            $criteria->addAssociation('stock');
+            $criteria->addFilter(new EqualsFilter('productNumber', $infoPlusProductSku));
+            $product = $this->productRepository->search($criteria, $context)->first();
+
+            if (!$product) {
+                $this->logger->warning("No Shopware product found with SKU {$infoPlusProductSku}");
+                return [
+                    'success' => false,
+                    'product' => $infoPlusItem['sku'],
+                    'message' => "No stock change",
+                    'error' => "No Shopware product found with SKU {$infoPlusProductSku}"
+                ];
+            }
+            $currentStock = $product->getStock();
+            if ($currentStock !== $newStock) {
+                $templateVariables = new ArrayStruct([
+                    'source' => 'Infoplus'
+                ]);
+                $context->addExtension('inventory_sync', $templateVariables);
+                $this->productRepository->update([
+                    [
+                        'id' => $product->getId(),
+                        'stock' => $newStock,
+                    ],
+                ], $context);
+                $this->logger->info("Updated stock for product {$product->getId()} to {$newStock}");
+                return [
+                    'success' => true,
+                    'product' => $infoPlusItem['sku'],
+                    'message' => "Stock updated from {$currentStock} to {$newStock}",
+                    'error' => null
+                ];
+            }
+        } catch (\Exception $e) {
+            $this->logger->error("Failed to update product SKU: {$infoPlusProductSku}: {$e->getMessage()}");
+            return [
+                'success' => false,
+                'product' => $infoPlusItem['sku'],
+                'message' => "No stock change",
+                'error' => "Failed to update product SKU: {$infoPlusProductSku}: {$e->getMessage()}"
+            ];
+        }
+        return [
+            'success' => true,
+            'product' => $infoPlusItem['sku'],
+            'message' => "No stock change",
+            'error' => null
+        ];
     }
 
     public function orderSyncStart(Context $context): array
@@ -744,7 +814,8 @@ class SyncService
                 $results[] = [
                     'orderNo' => $order->getOrderNumber(),
                     'success' => true,
-                    'error' => null
+                    'error' => null,
+                    'syncOrderShipping' => $this->syncPaidOrders($context, $order->getId())
                 ];
                 continue;
             }
@@ -817,7 +888,8 @@ class SyncService
             $results[] = [
                 'orderNo' => $order->getOrderNumber(),
                 'success' => is_array($result),
-                'error' => is_string($result) ? $result : null
+                'error' => is_string($result) ? $result : null,
+                'syncOrderShipping' => $this->syncPaidOrders($context, $order->getId())
             ];
         }
         $this->logger->info('[InfoPlus] Completed background order sync', ['results' => $results]);
@@ -944,5 +1016,221 @@ class SyncService
         ignore_user_abort(true);
         session_write_close();
         set_time_limit(0);
+    }
+    public function syncPaidOrders(Context $context, ?string $id = null): array
+    {
+        if (!$this->configService->get("syncOrders")) {
+            $this->logger->info("[InfoPlus] Cronjob orders sync is disabled, skipping task.");
+            return [
+                'status' => 'error',
+                'error' => $this->translator->trans('infoplus.service.errors.orderSyncDisabled')
+            ];
+        }
+
+        $syncedOrders = $this->idMappingService->getPendingShipmentOrders($context, $id);
+        return $this->processOrders($syncedOrders, $context);
+    }
+
+    private function processOrders(array $syncedOrders, Context $context): array
+    {
+        $returnArray = [];
+
+        if (empty($syncedOrders)) {
+            $this->logger->info('[InfoPlus] No synced orders to process');
+            return [
+                'status' => 'error',
+                'error' => $this->translator->trans('infoplus.service.errors.noOrdersFound')
+            ];
+        }
+
+        // Get $syncedOrders as array of order numbers
+        $orderNos = array_map(function ($order) {
+            return $order->getInfoplusId();
+        }, $syncedOrders);
+
+        // Query InfoPlus API for orders with orderNo IN ($orderNos)
+        $query = ['filter' => 'orderNo in (' . implode(',', $orderNos) . ')'];
+        $infoPlusOrders = $this->infoplusApiClient->searchOrders($query);
+
+        if (is_string($infoPlusOrders)) {
+            $this->logger->error('[InfoPlus] Failed to fetch orders from InfoPlus', ['error' => $infoPlusOrders]);
+            return [
+                'status' => 'error',
+                'error' => $this->translator->trans('infoplus.service.errors.apiFetchFailed', ['error' => $infoPlusOrders])
+            ];
+        }
+
+        foreach ($infoPlusOrders as $infoPlusOrder) {
+            if (!isset($infoPlusOrder['orderNo']) || !isset($infoPlusOrder['status'])) {
+                $this->logger->warning('[InfoPlus] Invalid order data from InfoPlus', ['order' => $infoPlusOrder]);
+                $returnArray[] = [
+                    'success' => false,
+                    'orderNo' => $infoPlusOrder['orderNo'] ?? 'unknown',
+                    'message' => 'No status change',
+                    'error' => 'Invalid order data from InfoPlus'
+                ];
+                continue;
+            }
+
+            $orderNo = $infoPlusOrder['orderNo'];
+            $shopwareOrderId = null;
+            foreach ($syncedOrders as $syncedOrder) {
+                if ($syncedOrder->getInfoplusId() == $orderNo) {
+                    $shopwareOrderId = $syncedOrder->getShopwareOrderId();
+                    break;
+                }
+            }
+
+            if (!$shopwareOrderId) {
+                $this->logger->warning('[InfoPlus] No Shopware order found for InfoPlus orderNo', ['orderNo' => $orderNo]);
+                $returnArray[] = [
+                    'success' => false,
+                    'orderNo' => $orderNo,
+                    'message' => 'No status change',
+                    'error' => 'No Shopware order found for InfoPlus orderNo'
+                ];
+                continue;
+            }
+
+            $status = strtolower($infoPlusOrder['status']);
+            $result = [
+                'success' => false,
+                'orderNo' => $orderNo,
+                'message' => 'No status change',
+                'error' => null
+            ];
+
+            switch ($status) {
+                case 'shipped':
+                    $result = $this->processOrder($shopwareOrderId, $infoPlusOrder, $context, 'order_delivery', 'ship', 'shipped');
+                    break;
+                case 'cancelled':
+                    $result = $this->processOrder($shopwareOrderId, $infoPlusOrder, $context, 'order_transaction', 'cancel', 'cancelled');
+                    if ($result['success']) {
+                        $deliveryResult = $this->processOrder($shopwareOrderId, $infoPlusOrder, $context, 'order_delivery', 'cancel', 'cancelled');
+                        if (!$deliveryResult['success']) {
+                            $result = $deliveryResult;
+                        }
+                    }
+                    break;
+                case 'pending':
+                case 'unknown':
+                case 'on order':
+                case 'processed':
+                case 'back order':
+                    $result = [
+                        'success' => true,
+                        'orderNo' => $orderNo,
+                        'message' => "Order status $status does not require update",
+                        'error' => null
+                    ];
+                    break;
+                case 'error':
+                    $result = $this->processOrder($shopwareOrderId, $infoPlusOrder, $context, 'order_transaction', 'fail', 'failed');
+                    break;
+                default:
+                    $this->logger->warning('[InfoPlus] Unhandled InfoPlus status', ['orderId' => $shopwareOrderId, 'status' => $status]);
+                    $result = [
+                        'success' => false,
+                        'orderNo' => $orderNo,
+                        'message' => 'No status change',
+                        'error' => "Unhandled InfoPlus status: $status"
+                    ];
+            }
+
+            $returnArray[] = $result;
+        }
+
+        return $returnArray;
+    }
+
+    private function processOrder(string $shopwareOrderId, $infoPlusOrder, Context $context, string $entity, string $action, string $targetState): array
+    {
+        $orderNo = $infoPlusOrder['orderNo'] ?? 'unknown';
+
+        // Load the order with necessary associations
+        $criteria = new Criteria([$shopwareOrderId]);
+        $criteria->addAssociation('transactions');
+        $criteria->addAssociation('deliveries');
+        $order = $this->orderRepository->search($criteria, $context)->first();
+
+        if (!$order instanceof OrderEntity) {
+            $this->logger->warning('[InfoPlus] Shopware order not found', ['orderId' => $shopwareOrderId]);
+            return [
+                'success' => false,
+                'orderNo' => $orderNo,
+                'message' => 'No status change',
+                'error' => 'Shopware order not found'
+            ];
+        }
+
+        $entityId = null;
+        if ($entity === 'order') {
+            $entityId = $shopwareOrderId;
+        } elseif ($entity === 'order_delivery') {
+            $delivery = $order->getDeliveries()->first();
+            if (!$delivery) {
+                $this->logger->warning('[InfoPlus] No delivery found for order', ['orderId' => $shopwareOrderId]);
+                return [
+                    'success' => false,
+                    'orderNo' => $orderNo,
+                    'message' => 'No status change',
+                    'error' => 'No delivery found for order'
+                ];
+            }
+            $entityId = $delivery->getId();
+        } elseif ($entity === 'order_transaction') {
+            $transaction = $order->getTransactions()->first();
+            if (!$transaction) {
+                $this->logger->warning('[InfoPlus] No transaction found for order', ['orderId' => $shopwareOrderId]);
+                return [
+                    'success' => false,
+                    'orderNo' => $orderNo,
+                    'message' => 'No status change',
+                    'error' => 'No transaction found for order'
+                ];
+            }
+            $entityId = $transaction->getId();
+        }
+
+        try {
+            $templateVariables = new ArrayStruct([
+                'source' => 'Infoplus',
+            ]);
+            $context->addExtension('orderStatusToShipped', $templateVariables);
+            // Perform state transition
+            $transition = new Transition(
+                $entity,
+                $entityId,
+                $action,
+                'stateId'
+            );
+
+            $this->stateMachineRegistry->transition($transition, $context);
+            $this->idMappingService->setShippedStatus($shopwareOrderId, (int)$infoPlusOrder['orderNo'], $context);
+            $this->logger->info("[InfoPlus] Order updated to $targetState in Shopware", [
+                'orderId' => $shopwareOrderId,
+                'entity' => $entity
+            ]);
+
+            return [
+                'success' => true,
+                'orderNo' => $orderNo,
+                'message' => "Order updated to $targetState",
+                'error' => null
+            ];
+        } catch (\Exception $e) {
+            $this->logger->error("[InfoPlus] Failed to update order to $targetState in Shopware", [
+                'orderId' => $shopwareOrderId,
+                'entity' => $entity,
+                'error' => $e->getMessage()
+            ]);
+            return [
+                'success' => false,
+                'orderNo' => $orderNo,
+                'message' => 'No status change',
+                'error' => "Failed to update order to $targetState: {$e->getMessage()}"
+            ];
+        }
     }
 }

@@ -58,7 +58,18 @@ class AdminSyncController extends AbstractController
     {
         try {
             $results = $this->syncService->syncInventory($context);
-            return new JsonResponse(['status' => $this->translator->trans('infoplus.api.status.inventorySyncCompleted'), 'results' => $results]);
+            return new JsonResponse($results);
+        } catch (\Exception $e) {
+            throw new HttpException(500, $this->translator->trans('infoplus.api.errors.inventorySyncFailed') . ' ' . $e->getMessage());
+        }
+    }
+
+    #[Route(path: '/api/_action/infoplus/sync/paidOrders', name: 'api.infoplus.sync.paidOrders', methods: ['POST'])]
+    public function syncPaidOrders(Context $context): JsonResponse
+    {
+        try {
+            $results = $this->syncService->syncPaidOrders($context);
+            return new JsonResponse($results);
         } catch (\Exception $e) {
             throw new HttpException(500, $this->translator->trans('infoplus.api.errors.inventorySyncFailed') . ' ' . $e->getMessage());
         }

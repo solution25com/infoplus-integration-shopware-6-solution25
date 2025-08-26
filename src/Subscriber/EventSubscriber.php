@@ -33,6 +33,9 @@ class EventSubscriber implements EventSubscriberInterface
     public function onProductWritten(EntityWrittenEvent $event): void
     {
         try {
+            if ($event->getContext()->hasExtension('inventory_sync')) {
+                return;
+            }
             if ($this->syncService->getConfigService()->get('syncProducts')) {
                 $ids = $event->getIds();
                 $this->syncService->syncProducts($event->getContext(), $ids);
@@ -65,6 +68,9 @@ class EventSubscriber implements EventSubscriberInterface
     public function onOrderWritten(EntityWrittenEvent $event): void
     {
         try {
+            if ($event->getContext()->hasExtension('orderStatusToShipped')) {
+                return;
+            }
             if ($this->syncService->getConfigService()->get('syncOrders')) {
                 $orderIds = $event->getIds();
                 $this->syncService->syncOrders($orderIds, $event->getContext());

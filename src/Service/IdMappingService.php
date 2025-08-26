@@ -232,10 +232,10 @@ class IdMappingService
             'sync_date' => $result->getSyncDate()->format('Y-m-d H:i:s')
         ] : null;
     }
-
-    public function getPendingShipmentOrders(Context $context): array
+    public function getPendingShipmentOrders(Context $context, ?string $id = null): array
     {
         $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('shopwareOrderId', $id));
         $criteria->addFilter(
             new EqualsFilter('orderShippingStatus', 'open'),
             new EqualsFilter('orderPaymentStatus', 'paid')

@@ -40,67 +40,6 @@ class SyncProductInventoryTaskHandler extends ScheduledTaskHandler
     public function run(): void
     {
         $context = Context::createDefaultContext();
-        if (!$this->syncService->getConfigService()->get("syncInventory")) {
-            $this->logger->info("[InfoPlus] Inventory sync is disabled, skipping task.");
-            return;
-        }
-        $products = $this->productRepository->search(new Criteria(), $context);
-        if ($products->count() === 0) {
-            $this->logger->info("[InfoPlus] No active products found, skipping inventory sync.");
-            return;
-        }
-        $skus = [];
-        foreach ($products as $product) {
-            if ($product->getProductNumber()) {
-                $skus[] = $product->getProductNumber();
-            }
-        }
-        $query = ['filter' => 'sku in (\'' . implode('\',\'', $skus) . '\')'];
-        $infoPlusInventory = $this->syncService->getItems($query);
-
-        foreach ($infoPlusInventory as $infoPlusItem) {
-            $this->processProduct($infoPlusItem, $context);
-        }
-    }
-
-    private function processProduct(array $infoPlusItem, Context $context): void
-    {
-        $infoPlusProductId = $infoPlusItem['id'] ?? null;
-        $newStock = $infoPlusItem['availableQuantity'] ?? 0;
-
-        if (!$infoPlusProductId) {
-            $this->logger->warning("Invalid InfoPlus product data: ID missing");
-            return;
-        }
-        //get product id by $infoPlusItem['sku']
-        if (!isset($infoPlusItem['sku'])) {
-            $this->logger->warning("Invalid InfoPlus product data: SKU missing for product ID {$infoPlusProductId}");
-            return;
-        }
-        $infoPlusProductSku = $infoPlusItem['sku'];
-
-        try {
-            $criteria = new Criteria();
-            $criteria->addAssociation('stock');
-            $criteria->addFilter(new EqualsFilter('productNumber', $infoPlusProductSku));
-            $product = $this->productRepository->search($criteria, $context)->first();
-
-            if (!$product) {
-                $this->logger->warning("No Shopware product found with SKU {$infoPlusProductSku}");
-                return;
-            }
-
-            if ($product->getStock() !== $newStock) {
-                $this->productRepository->update([
-                    [
-                        'id' => $product->getId(),
-                        'stock' => $newStock,
-                    ],
-                ], $context);
-                $this->logger->info("Updated stock for product {$product->getId()} to {$newStock}");
-            }
-        } catch (\Exception $e) {
-            $this->logger->error("Failed to update product SKU: {$infoPlusProductSku}: {$e->getMessage()}");
-        }
+        $this->syncService->syncInventory($context);
     }
 }
