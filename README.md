@@ -1,3 +1,7 @@
+[![Packagist Version](https://img.shields.io/packagist/v/solution25/infoplus-commerce.svg)](https://packagist.org/packages/solution25/infoplus-commerce)
+[![Packagist Downloads](https://img.shields.io/packagist/dt/solution25/infoplus-commerce.svg)](https://packagist.org/packages/solution25/infoplus-commerce)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/solution25/InfoPlus/blob/main/LICENSE)
+
 # InfoPlusCommerce Shopware Plugin
 
 ## Overview
