@@ -1,18 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace InfoPlusCommerce\Client;
 
 use GuzzleHttp\Client;
 use InfoPlusCommerce\Service\ConfigService;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\RateLimiter\LimiterInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Throwable;
 
 class InfoplusApiClient
 {
     private Client $httpClient;
-    private $userLimiter;
-    private $domainLimiter;
+    private LimiterInterface $userLimiter;
+    private LimiterInterface $domainLimiter;
 
     public function __construct(
         private readonly ConfigService $configService,
@@ -21,17 +24,17 @@ class InfoplusApiClient
         RateLimiterFactory $domainRateLimiterFactory
     ) {
         $this->httpClient = new Client([
-            'base_uri' => rtrim($this->configService->get('baseDomain'), '/') . '/infoplus-wms/api/',
+            'base_uri' => rtrim((string) $this->configService->get('baseDomain'), '/') . '/infoplus-wms/api/',
             'timeout' => 10,
         ]);
         $this->userLimiter = $userRateLimiterFactory->create('infoplus_user');
-        $this->domainLimiter = $domainRateLimiterFactory->create('infoplus_domain_' . $this->configService->get('baseDomain'));
+        $this->domainLimiter = $domainRateLimiterFactory->create('infoplus_domain_' . (string) $this->configService->get('baseDomain'));
     }
 
     private function getHeaders(): array
     {
         return [
-            'API-Key' => $this->configService->get('apiKey'),
+            'API-Key' => (string) $this->configService->get('apiKey'),
             'Accept' => 'application/json',
         ];
     }
@@ -73,6 +76,9 @@ class InfoplusApiClient
         }
     }
 
+    /**
+     * @return array<string,mixed>|string
+     */
     private function requestWithRetry(string $method, string $endpoint, array $options = [], int $maxAttempts = 3): array|string
     {
         $attempt = 1;
@@ -100,8 +106,8 @@ class InfoplusApiClient
                         'message' => $e->getMessage(),
                         'delay' => $delay / 1000000 . ' seconds'
                     ]);
-                    usleep($delay);
-                    $delay *= 1.5; // Increase delay for next attempt
+                    usleep((int) $delay);
+                    $delay = (int) ($delay * 1.5); // Increase delay for next attempt
                     $attempt++;
                     continue;
                 }
@@ -119,17 +125,21 @@ class InfoplusApiClient
                     'method' => $method,
                     'message' => $e->getMessage()
                 ]);
-                usleep($delay);
-                $delay *= 1.5;
+                usleep((int) $delay);
+                $delay = (int) ($delay * 1.5);
                 $attempt++;
             }
         }
         return "Limit exceeded after $maxAttempts attempts";
     }
 
+    /**
+     * @return array<string,mixed>|string
+     */
     public function request(string $method, string $endpoint, array $options = []): array|string
     {
-        return $this->requestWithRetry($method, $endpoint, $options, $this->configService->get('maxRetryAttempts') ?? 3);
+        $attempts = (int) ($this->configService->get('maxRetryAttempts') ?? 3);
+        return $this->requestWithRetry($method, $endpoint, $options, $attempts);
     }
 
     /**
@@ -138,7 +148,7 @@ class InfoplusApiClient
      * @param string $endpoint The API endpoint (e.g., 'v3.0/itemCategory/search')
      * @param array $initialQuery Initial query parameters
      * @param int $limit Maximum records per page (default 250)
-     * @return array All records combined from all pages
+     * @return array<int, array<string, mixed>> All records combined from all pages
      */
     private function fetchAllPages(string $endpoint, array $initialQuery = [], int $limit = 250): array
     {
@@ -164,14 +174,14 @@ class InfoplusApiClient
             $page++;
 
             // Break if the last page has fewer records than the limit, indicating the end
-            if (count($response) < $limit) {
+            if (\count($response) < $limit) {
                 break;
             }
         }
 
         $this->logger->info('[Infoplus fetchAllPages]', [
             'endpoint' => $endpoint,
-            'totalRecords' => count($allRecords),
+            'totalRecords' => \count($allRecords),
             'pagesFetched' => $page - 1
         ]);
         return $allRecords;
@@ -202,7 +212,7 @@ class InfoplusApiClient
         return $this->fetchAllPages('v3.0/item/search', $query);
     }
 
-    public function getBySKU($lobId, $sku): ?array
+    public function getBySKU(int $lobId, string $sku): ?array
     {
         $query = [
             'lobId' => $lobId,
@@ -211,11 +221,19 @@ class InfoplusApiClient
         return $this->get('v3.0/item/getBySKU', $query) ?? [];
     }
 
+    /**
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>|string
+     */
     public function createItem(array $data): array|string
     {
         return $this->request('POST', 'v3.0/item', ['json' => $data]);
     }
 
+    /**
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>|string
+     */
     public function updateItem(array $data): array|string
     {
         return $this->request('PUT', 'v3.0/item', ['json' => $data]);
@@ -231,11 +249,19 @@ class InfoplusApiClient
         return $this->fetchAllPages('v3.0/itemCategory/search', $query);
     }
 
+    /**
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>|string
+     */
     public function createItemCategory(array $data): array|string
     {
         return $this->request('POST', 'v3.0/itemCategory', ['json' => $data]);
     }
 
+    /**
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>|string
+     */
     public function updateItemCategory(array $data): array|string
     {
         return $this->request('PUT', 'v3.0/itemCategory', ['json' => $data]);
@@ -256,7 +282,7 @@ class InfoplusApiClient
         return $this->fetchAllPages('v3.0/customer/search', $query);
     }
 
-    public function getCustomerByCustomerNo($lobId, $customerNo): ?array
+    public function getCustomerByCustomerNo(string $lobId, string $customerNo): ?array
     {
         $query = [
             'filter' => "lobId eq $lobId and customerNo eq '$customerNo'"
@@ -265,11 +291,19 @@ class InfoplusApiClient
         return !empty($customers) ? $customers[0] : null;
     }
 
+    /**
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>|string
+     */
     public function createCustomer(array $data): array|string
     {
         return $this->request('POST', 'v3.0/customer', ['json' => $data]);
     }
 
+    /**
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>|string
+     */
     public function updateCustomer(array $data): array|string
     {
         return $this->request('PUT', 'v3.0/customer', ['json' => $data]);
@@ -292,11 +326,19 @@ class InfoplusApiClient
         return !empty($orders) ? $orders[0] : null;
     }
 
+    /**
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>|string
+     */
     public function createOrder(array $data): array|string
     {
         return $this->request('POST', 'v3.0/order', ['json' => $data]);
     }
 
+    /**
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>|string
+     */
     public function updateOrder(array $data): array|string
     {
         return $this->request('PUT', 'v3.0/order', ['json' => $data]);
@@ -312,6 +354,10 @@ class InfoplusApiClient
         return $this->fetchAllPages('v3.0/inventoryAdjustment/search', $query);
     }
 
+    /**
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>|string
+     */
     public function updateInventory(array $data): array|string
     {
         return $this->request('PUT', 'v3.0/inventory', ['json' => $data]);
@@ -322,21 +368,29 @@ class InfoplusApiClient
         $this->httpClient = $client;
     }
 
-    public function getItemCategories(array $filter = []): ?array
+    public function getItemCategories(array $filter = []): array
     {
         return $this->fetchAllPages('v3.0/itemCategory/search', $filter);
     }
 
-    public function getItemSubCategories(array $filter = []): ?array
+    public function getItemSubCategories(array $filter = []): array
     {
         return $this->fetchAllPages('v3.0/itemSubCategory/search', $filter);
     }
 
+    /**
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>|string
+     */
     public function createItemSubCategory(array $data): array|string
     {
         return $this->request('POST', 'v3.0/itemSubCategory', ['json' => $data]);
     }
 
+    /**
+     * @param array<string,mixed> $data
+     * @return array<string,mixed>|string
+     */
     public function updateItemSubCategory(array $data): array|string
     {
         return $this->request('PUT', 'v3.0/itemSubCategory', ['json' => $data]);

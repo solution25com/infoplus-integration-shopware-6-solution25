@@ -1,0 +1,37 @@
+{% sw_extends '@Storefront/storefront/component/buy-widget/buy-widget-form.html.twig' %}
+
+{% block buy_widget_buy_container %}
+
+    {% set infoplusFields = page.extensions.infoplusCustomFields ?? [] %}
+    {% if infoplusFields|length > 0 %}
+        <div class="infoplus-customfields-form" style="margin-top: 2rem;">
+            <h3>{{ 'infoplus.product.customFieldsTitle'|trans }}</h3>
+            {% for field in infoplusFields %}
+                <div class="infoplus-customfield" style="margin-bottom: 1rem;">
+                    <label for="infoplus_{{ field.technicalName }}">
+                        {{ field.label }}
+                        {% if field.isRequired %}*{% endif %}
+                    </label>
+                    {% if field.type == 'text' or field.type == 'textarea' %}
+                        <input type="text" name="infoplus_{{ field.technicalName }}" id="infoplus_{{ field.technicalName }}" class="form-control" {% if field.isRequired %}required{% endif %} />
+                    {% elseif field.type == 'number' %}
+                        <input type="number" name="infoplus_{{ field.technicalName }}" id="infoplus_{{ field.technicalName }}" class="form-control" {% if field.isRequired %}required{% endif %} />
+                    {% elseif field.type == 'money' %}
+                        <input type="number" name="infoplus_{{ field.technicalName }}" id="infoplus_{{ field.technicalName }}" class="form-control" step="0.1"  {% if field.isRequired %}required{% endif %} />
+                    {% elseif field.type == 'boolean' %}
+                        <input type="hidden" name="infoplus_{{ field.technicalName }}" id="infoplus_{{ field.technicalName }}" value="0" />
+                        <input type="checkbox" name="infoplus_{{ field.technicalName }}" id="infoplus_{{ field.technicalName }}" value="1" />
+                    {% elseif field.type == 'select' %}
+                        <select name="infoplus_{{ field.technicalName }}" id="infoplus_{{ field.technicalName }}" class="form-control" {% if field.isRequired %}required{% endif %}>
+                            <option value="">{{ 'infoplus.product.selectOption'|trans }}</option>
+                            {% for opt in field.options %}
+                                <option value="{{ opt }}">{{ opt }}</option>
+                            {% endfor %}
+                        </select>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {{ parent() }}
+{% endblock %}

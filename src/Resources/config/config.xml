@@ -27,7 +27,7 @@
 
         <component name="sw-text-field">
             <name>carrierId</name>
-            <label>Carrier ID</label>
+            <label>Default Carrier ID</label>
         </component>
     </card>
 </config>

@@ -1,0 +1,22 @@
+{% sw_extends '@Storefront/storefront/component/product/card/action.html.twig' %}
+{% block component_product_box_action_inner %}
+    {% set hasInfoplus = false %}
+    {% if product.customFields is defined and product.customFields is iterable %}
+        {% for key, value in product.customFields %}
+            {% if key starts with 'infoplus_'
+                and key != 'infoplus_sub_group_id'
+                and key != 'infoplus_major_group_id'
+                and value is not empty %}
+                {% set hasInfoplus = true %}
+                {% break %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    {% if hasInfoplus %}
+        {% block component_product_box_action_detail %}
+            {{ parent() }}
+        {% endblock %}
+    {% else %}
+        {{ parent() }}
+    {% endif %}
+{% endblock %}

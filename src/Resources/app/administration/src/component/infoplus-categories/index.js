@@ -15,6 +15,8 @@ Component.register('infoplus-categories', {
         return {
             categories: [],
             isSubCategory: false,
+            showDeleteModal: false,
+            categoryToDelete: null,
         };
     },
     created() {
@@ -27,7 +29,7 @@ Component.register('infoplus-categories', {
         this.fetchCategories();
     },
     watch: {
-        '$route'(to, from) {
+        '$route'(to) {
             const currentPath = to.path;
             if (currentPath.includes('subCategories')) {
                 this.isSubCategory = true;
@@ -73,12 +75,12 @@ Component.register('infoplus-categories', {
             });
         },
         async deleteCategory(item) {
-            if (!confirm(this.$tc('infoplus.notifications.confirm.deleteCategory'))) {
-                return;
-            }
-
+            this.categoryToDelete = item;
+            this.showDeleteModal = true;
+        },
+        async confirmDeleteCategory() {
             try {
-                const response = await fetch(`/api/_action/infoplus/delete/category/${item.id}`, {
+                const response = await fetch(`/api/_action/infoplus/delete/category/${this.categoryToDelete.id}`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
@@ -102,16 +104,20 @@ Component.register('infoplus-categories', {
                         message: data.message || this.$tc('infoplus.notifications.error.deleteCategoryFailed', 0, { message: '' }),
                     });
                 }
-
-
-                // Refresh the category list
                 await this.fetchCategories();
             } catch (error) {
                 this.createNotificationError({
                     title: this.$tc('infoplus.notifications.errorTitle'),
                     message: this.$tc('infoplus.notifications.error.deleteCategoryFailed', 0, { message: error.message }),
                 });
+            } finally {
+                this.showDeleteModal = false;
+                this.categoryToDelete = null;
             }
+        },
+        cancelDeleteCategory() {
+            this.showDeleteModal = false;
+            this.categoryToDelete = null;
         },
     },
 });

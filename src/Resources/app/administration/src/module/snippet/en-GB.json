@@ -12,7 +12,8 @@
       "syncSettings": "Sync Settings",
       "categorySettings": "Infoplus Categories",
       "subCategorySettings": "Infoplus Sub Categories",
-      "logInfo": "Log Info"
+      "logInfo": "Log Info",
+      "customFieldSettings": "Custom Field Settings"
     },
     "category": {
       "editTitle": "Edit Category",
@@ -55,6 +56,8 @@
       "selectSubCategoryPlaceholder": "Select a Sub Category",
       "syncing": "Syncing product with Infoplus...",
       "syncedAtPrefix": "Product synced at",
+      "customFieldsTitle": "Infoplus Custom Fields",
+      "selectOption": "-- Select Option --",
       "errors": {
         "missingId": "Product ID is not available for syncing.",
         "categoryRequired": "Category and subcategory selection is required.",
@@ -235,6 +238,32 @@
         "failedToLoadLogGeneric": "Failed to load log content",
         "downloadFailed": "Download failed: {message}"
       }
+    },
+    "customfield": {
+      "createNew": "Create New Custom Field",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleted": "Custom field deleted.",
+      "saved": "Custom field saved.",
+      "save": "Save",
+      "optionsPlaceholder": "Enter options separated by commas",
+      "columns": {
+        "technicalName": "Technical Name",
+        "label": "Label",
+        "type": "Type",
+        "isRequired": "Required",
+        "active": "Active",
+        "showInStorefront": "Show for Customer",
+        "position": "Position",
+        "options": "Options"
+      }
+    },
+    "shipping": {
+      "cardTitle": "InfoPlus",
+      "carrierSelectLabel": "Carrier",
+      "carrierSelectPlaceholder": "Select a carrier (leave empty to use default)",
+      "helpDefaultCarrier": "If empty, the default carrier from plugin configuration is used.",
+      "unknownCarrierPrefix": "Unknown carrier id"
     }
   }
 }

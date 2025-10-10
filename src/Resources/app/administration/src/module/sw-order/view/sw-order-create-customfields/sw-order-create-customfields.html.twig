@@ -1,0 +1,73 @@
+<sw-card title="Infoplus Custom Fields">
+    <div v-if="lineItems && lineItems.length">
+        <div v-for="item in lineItems || []" :key="item.id" class="infoplus-lineitem-fields">
+            <h4>{{ item.label || item.name }}</h4>
+            <div v-if="assignableFieldsByLineItem[item.id] && assignableFieldsByLineItem[item.id].length">
+                <div v-for="field in assignableFieldsByLineItem[item.id]" :key="field.technicalName" class="infoplus-customfield">
+
+                    <template v-if="field.type === 'text'">
+                        <sw-text-field
+                            :label="field.label"
+                            :required="field.isRequired"
+                            v-model:value="item.payload.customFields['infoplus_' + field.technicalName]"
+                            @update:value="updateCustomField(item, 'infoplus_' + field.technicalName, $event)"
+                        />
+                    </template>
+
+                    <template v-else-if="field.type === 'textarea'">
+                        <sw-textarea-field
+                            :label="field.label"
+                            :required="field.isRequired"
+                            v-model:value="item.payload.customFields['infoplus_' + field.technicalName]"
+                            @update:value="updateCustomField(item, 'infoplus_' + field.technicalName, $event)"
+                            :rows="3"
+                        />
+                    </template>
+
+                    <template v-else-if="field.type === 'number' || field.type === 'money'">
+                        <sw-number-field
+                            :label="field.label"
+                            :required="field.isRequired"
+                            v-model:value="item.payload.customFields['infoplus_' + field.technicalName]"
+                            @update:value="updateCustomField(item, 'infoplus_' + field.technicalName, $event)"
+                            :digits="field.type === 'money' ? 2 : 0"
+                        />
+                    </template>
+
+                    <template v-else-if="field.type === 'boolean'">
+                        <sw-switch-field
+                            :label="field.label"
+                            v-model:value="item.payload.customFields['infoplus_' + field.technicalName]"
+                            @update:value="updateCustomField(item, 'infoplus_' + field.technicalName, $event)"
+                        />
+                    </template>
+
+                    <template v-else-if="field.type === 'select'">
+                        <sw-single-select
+                            :label="field.label"
+                            :required="field.isRequired"
+                            :options="(field.options || []).map(o => ({ label: o, value: o }))"
+                            v-model:value="item.payload.customFields['infoplus_' + field.technicalName]"
+                            @update:value="updateCustomField(item, 'infoplus_' + field.technicalName, $event)"
+                            placeholder="Select..."
+                        />
+                    </template>
+
+                    <template v-else>
+                        <sw-text-field
+                            :label="field.label"
+                            :required="field.isRequired"
+                            v-model:value="item.payload.customFields['infoplus_' + field.technicalName]"
+                            @update:value="updateCustomField(item, 'infoplus_' + field.technicalName, $event)"
+                        />
+                    </template>
+                </div>
+            </div>
+            <em v-else class="infoplus-customfields-empty">No assignable custom fields for this product</em>
+        </div>
+        <div style="margin-top: 2rem; text-align: right;">
+            <sw-button variant="primary" @click="saveCustomFields">{{ $tc('global.default.save') }}</sw-button>
+        </div>
+    </div>
+    <em v-else>No line items found</em>
+</sw-card>

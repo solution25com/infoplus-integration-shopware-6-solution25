@@ -1,8 +1,9 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace InfoPlusCommerce\Command;
 
-use InfoPlusCommerce\Message\SyncOrdersMessage;
 use InfoPlusCommerce\Service\SyncService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
@@ -31,7 +32,7 @@ class SyncCommand extends Command
     {
         $this->logger->info('[InfoPlus] Full sync command triggered');
         $output->writeln('Starting full synchronization with InfoPlus...');
-        $context = Context::createDefaultContext();
+        $context = Context::createCLIContext();
 
         $this->syncService->getConfigService()->set('syncInProgress', true);
         // Step 1: Sync Customers
@@ -43,11 +44,11 @@ class SyncCommand extends Command
                 $this->logger->warning('[InfoPlus] No customers found for sync');
             } else {
                 foreach ($customerResults as $result) {
-                    if ($result['success']) {
-                        $output->writeln(sprintf('Customer %s synced successfully.', $result['customerNo']));
+                    if (($result['success'] ?? false) === true) {
+                        $output->writeln(sprintf('Customer %s synced successfully.', $result['customerNo'] ?? '-'));
                     } else {
-                        $output->writeln(sprintf('Failed to sync customer %s: %s', $result['customerNo'], $result['error']));
-                        $this->logger->error('[InfoPlus] Failed to sync customer', ['customerNo' => $result['customerNo'], 'error' => $result['error']]);
+                        $output->writeln(sprintf('Failed to sync customer %s: %s', $result['customerNo'] ?? '-', $result['error'] ?? 'unknown error'));
+                        $this->logger->error('[InfoPlus] Failed to sync customer', ['customerNo' => $result['customerNo'] ?? '-', 'error' => $result['error'] ?? 'unknown']);
                     }
                 }
             }
@@ -68,11 +69,11 @@ class SyncCommand extends Command
                 $this->logger->warning('[InfoPlus] No categories found for sync');
             } else {
                 foreach ($categoryResults as $result) {
-                    if ($result['success']) {
-                        $output->writeln(sprintf('Category %s (%s) synced successfully.', $result['name'], $result['type']));
+                    if (($result['success'] ?? false) === true) {
+                        $output->writeln(sprintf('Category %s (%s) synced successfully.', $result['name'] ?? '-', $result['type'] ?? '-'));
                     } else {
-                        $output->writeln(sprintf('Failed to sync category %s (%s): %s', $result['name'], $result['type'], $result['error']));
-                        $this->logger->error('[InfoPlus] Failed to sync category', ['name' => $result['name'], 'type' => $result['type'], 'error' => $result['error']]);
+                        $output->writeln(sprintf('Failed to sync category %s (%s): %s', $result['name'] ?? '-', $result['type'] ?? '-', $result['error'] ?? 'unknown error'));
+                        $this->logger->error('[InfoPlus] Failed to sync category', ['name' => $result['name'] ?? '-', 'type' => $result['type'] ?? '-', 'error' => $result['error'] ?? 'unknown']);
                     }
                 }
             }
@@ -93,11 +94,11 @@ class SyncCommand extends Command
                 $this->logger->warning('[InfoPlus] No products found for sync');
             } else {
                 foreach ($productResults as $result) {
-                    if ($result['success']) {
-                        $output->writeln(sprintf('Product %s synced successfully.', $result['sku']));
+                    if (($result['success'] ?? false) === true) {
+                        $output->writeln(sprintf('Product %s synced successfully.', $result['sku'] ?? '-'));
                     } else {
-                        $output->writeln(sprintf('Failed to sync product %s: %s', $result['sku'], $result['error']));
-                        $this->logger->error('[InfoPlus] Failed to sync product', ['sku' => $result['sku'], 'error' => $result['error']]);
+                        $output->writeln(sprintf('Failed to sync product %s: %s', $result['sku'] ?? '-', $result['error'] ?? 'unknown error'));
+                        $this->logger->error('[InfoPlus] Failed to sync product', ['sku' => $result['sku'] ?? '-', 'error' => $result['error'] ?? 'unknown']);
                     }
                 }
             }
@@ -113,11 +114,7 @@ class SyncCommand extends Command
         $output->writeln('Synchronizing orders...');
         try {
             $criteria = new Criteria();
-            $criteria->addAssociation('lineItems.product');
-            $criteria->addAssociation('shippingAddress');
-            $criteria->addAssociation('orderCustomer');
-            $orders = $this->orderRepository->search($criteria, $context);
-            $orderIds = array_values($orders->getIds());
+            $orderIds = $this->orderRepository->searchIds($criteria, $context)->getIds();
 
             if (empty($orderIds)) {
                 $output->writeln('No orders found for synchronization.');
@@ -128,17 +125,17 @@ class SyncCommand extends Command
                     $output->writeln('No order found for synchronization.');
                     $this->logger->warning('[InfoPlus] No orders found for sync');
                 } else {
-                    foreach ($productResults as $result) {
-                        if ($result['success']) {
-                            $output->writeln(sprintf('Order %s synced successfully.', $result['orderNo'] ?? $result['sku']?? "-"));
+                    foreach ($orderResults as $result) {
+                        if (($result['success'] ?? false) === true) {
+                            $output->writeln(sprintf('Order %s synced successfully.', $result['orderNo'] ?? '-'));
                         } else {
-                            $output->writeln(sprintf('Failed to sync product %s: %s', $result['orderNo'] ?? $result['sku']?? "-", $result['error']));
-                            $this->logger->error('[InfoPlus] Failed to sync product', ['sku' => $result['sku'], 'error' => $result['error']]);
+                            $output->writeln(sprintf('Failed to sync order %s: %s', $result['orderNo'] ?? '-', $result['error'] ?? 'unknown error'));
+                            $this->logger->error('[InfoPlus] Failed to sync order', ['orderNo' => $result['orderNo'] ?? '-', 'error' => $result['error'] ?? 'unknown']);
                         }
                     }
                 }
             }
-            $output->writeln('Order synchronization dispatched.');
+            $output->writeln('Order synchronization completed.');
         } catch (\Exception $e) {
             $this->syncService->getConfigService()->set('syncInProgress', false);
             $output->writeln(sprintf('Order sync failed: %s', $e->getMessage()));

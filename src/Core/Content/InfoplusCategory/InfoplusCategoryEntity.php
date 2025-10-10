@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace InfoPlusCommerce\Core\Content\InfoplusCategory;
 
@@ -8,6 +10,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 class InfoplusCategoryEntity extends Entity
 {
     use EntityIdTrait;
+
     protected $id;
     protected int $internalId;
     protected string $name;
@@ -50,7 +53,7 @@ class InfoplusCategoryEntity extends Entity
         $this->name = $name;
     }
 
-    public function isSubCategory(): bool
+    public function getIsSubCategory(): bool
     {
         return $this->isSubCategory;
     }
@@ -59,5 +62,4 @@ class InfoplusCategoryEntity extends Entity
     {
         $this->isSubCategory = $isSubCategory;
     }
-
 }

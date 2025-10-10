@@ -1,14 +1,24 @@
 {
     "name": "infoplus-commerce/infoplus-commerce",
-    "description": "info-plus-commerce/info-plus-commerce",
+    "description": "Shopware 6 integration with InfoPlus (ERP/WMS) to synchronize products, categories, customers, inventory, and orders between Shopware and InfoPlus.",
     "type": "shopware-platform-plugin",
-    "version": "1.0.7",
+    "version": "1.0.9",
     "license": "MIT",
+    "authors": [
+        {
+            "name": "Solution25",
+            "email": "info@solution25.com",
+            "homepage": "https://www.solution25.com",
+            "role": "Manufacturer"
+        }
+    ],
     "require": {
-        "shopware/core": "~6.6.0",
-        "symfony/rate-limiter": "^7.1",
         "php": ">=8.2",
-        "symfony/messenger": "^7.2"
+        "shopware/core": "~6.6.0",
+        "shopware/administration": "~6.6.0",
+        "shopware/storefront": "~6.6.0",
+        "symfony/messenger": "^7.2",
+        "symfony/rate-limiter": "^7.1"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "^3.7"
@@ -19,9 +29,24 @@
             "de-DE": "InfoPlus Commerce",
             "en-GB": "InfoPlus Commerce"
         },
+        "description": {
+            "en-GB": "Seamlessly connect Shopware 6 with InfoPlus to automate catalog, customer, inventory, and order flows. Reliable syncing reduces manual work and keeps systems in perfect alignment.",
+            "de-DE": "Shopware 6 mit InfoPlus nahtlos verbinden: Katalog, Kunden, Lagerbestände und Bestellungen automatisch synchronisieren. Weniger manueller Aufwand, konsistente Daten, stabile Prozesse."
+        },
+        "manufacturerLink": {
+            "en-GB": "https://www.solution25.com",
+            "de-DE": "https://www.solution25.com"
+        },
+        "supportLink": {
+            "en-GB": "https://www.solution25.com/contact/",
+            "de-DE": "https://www.solution25.com/contact/"
+        },
         "shopware-plugin": {
             "administration": {
                 "path": "Resources/app/administration/src"
+            },
+            "storefront": {
+                "path": "Resources/app/storefront/src"
             }
         }
     },

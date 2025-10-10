@@ -1,10 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace InfoPlusCommerce\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -15,12 +15,12 @@ use Symfony\Component\HttpFoundation\RequestStack;
 #[Route(defaults: ['_routeScope' => ['api']])]
 class LogFileController extends AbstractController
 {
-    private string $projectDir;
+    private string $logsDir;
     private RequestStack $requestStack;
 
     public function __construct(ParameterBagInterface $params, RequestStack $requestStack)
     {
-        $this->projectDir = $params->get('kernel.project_dir');
+        $this->logsDir = (string) $params->get('kernel.logs_dir');
         $this->requestStack = $requestStack;
     }
 
@@ -29,20 +29,21 @@ class LogFileController extends AbstractController
     {
         $logs = [];
         try {
-            $logDir = $this->projectDir . '/var/log';
-
-            if (!is_dir($logDir)) {
+            if (!is_dir($this->logsDir)) {
                 return new JsonResponse(['error' => 'Log directory not found'], 500);
             }
 
-            $files = scandir($logDir, SCANDIR_SORT_DESCENDING);
+            $files = scandir($this->logsDir, SCANDIR_SORT_DESCENDING);
             if (!is_array($files)) {
                 return new JsonResponse(['error' => 'Unable to read log directory'], 500);
             }
 
             foreach ($files as $file) {
+                if ($file === '.' || $file === '..') {
+                    continue;
+                }
                 if (str_starts_with($file, 'InfoPlus')) {
-                    $path = $logDir . '/' . $file;
+                    $path = $this->logsDir . '/' . $file;
                     if (!is_file($path) || !is_readable($path)) {
                         continue;
                     }
@@ -51,10 +52,11 @@ class LogFileController extends AbstractController
                     $fh = new \SplFileObject($path, 'r');
                     for ($i = 0; $i < 1 && !$fh->eof(); $i++) {
                         $line = $fh->fgets();
+                        // @phpstan-ignore-next-line
                         if ($line === false) {
                             break;
                         }
-                        $firstLines[] = substr(rtrim($line, "\r\n"),0,500);
+                        $firstLines[] = substr(rtrim($line, "\r\n"), 0, 500);
                     }
 
                     $logs[] = [
@@ -63,49 +65,49 @@ class LogFileController extends AbstractController
                     ];
                 }
             }
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             return new JsonResponse(['error' => 'An error occurred while retrieving logs: ' . $e->getMessage()], 500);
         }
         return new JsonResponse(['logs' => $logs]);
     }
 
-#[Route(
+    #[Route(
         path: '/api/_action/infoplus/logs/{file}/content',
         name: 'api.infoplus.logs.file',
         methods: ['GET'],
         defaults: ['_routeScope' => ['api']],
-        requirements: ['file' => '[A-Za-z0-9._\-]+' ]
+        requirements: ['file' => '[A-Za-z0-9._\-]+']
     )]
     public function getLogContent(string $file): JsonResponse
     {
-        $logDir = $this->projectDir . '/var/log';
-        $filePath = $logDir . '/' . $file;
+        $filePath = $this->logsDir . '/' . $file;
 
         if (!is_file($filePath) || !is_readable($filePath)) {
             return new JsonResponse(['error' => 'Log file not found or not readable'], 404);
         }
 
-        $page = (int)($this->requestStack->getCurrentRequest()->query->get('page', 1));
-        $limit = (int)($this->requestStack->getCurrentRequest()->query->get('limit', 100));
+        $request = $this->requestStack->getCurrentRequest();
+        $page = (int) ($request?->query->get('page', '1') ?? '1');
+        $limit = (int) ($request?->query->get('limit', '100') ?? '100');
+        $page = max(1, $page);
+        $limit = max(1, min(1000, $limit));
         $startLine = ($page - 1) * $limit;
+
         $lines = [];
         $total = 0;
         try {
             $fh = new \SplFileObject($filePath, 'r');
-            // Count total lines
             while (!$fh->eof()) {
                 $fh->fgets();
                 $total++;
             }
             $fh->rewind();
-            // Seek to start line
             for ($i = 0; $i < $startLine && !$fh->eof(); $i++) {
                 $fh->fgets();
             }
-            // Read chunk
             for ($i = 0; $i < $limit && !$fh->eof(); $i++) {
                 $line = $fh->fgets();
+                // @phpstan-ignore-next-line
                 if ($line === false) {
                     break;
                 }
@@ -116,6 +118,7 @@ class LogFileController extends AbstractController
             return new JsonResponse(['error' => 'An error occurred while reading the log file: ' . $e->getMessage()], 500);
         }
     }
+
     #[Route(
         path: '/api/_action/infoplus/logs/{file}/download',
         name: 'api.infoplus.logs.file.download',
@@ -124,18 +127,15 @@ class LogFileController extends AbstractController
     )]
     public function downloadLogFile(string $file): StreamedResponse|JsonResponse
     {
-        $logDir = $this->projectDir . '/var/log';
-
-        // Validate file name and path
         if (!preg_match('/^[A-Za-z0-9._\-]+$/', $file)) {
             return new JsonResponse(['error' => 'Invalid file name'], 400);
         }
 
-        $filePath = $logDir . '/' . $file;
+        $filePath = $this->logsDir . '/' . $file;
         $realPath = realpath($filePath);
+        $logsRealPath = realpath($this->logsDir) ?: $this->logsDir;
 
-        // Security check - ensure file is within log directory
-        if ($realPath === false || !str_starts_with($realPath, realpath($logDir) . DIRECTORY_SEPARATOR)) {
+        if ($realPath === false || !str_starts_with($realPath, $logsRealPath . DIRECTORY_SEPARATOR)) {
             return new JsonResponse(['error' => 'Invalid path'], 400);
         }
 
@@ -144,24 +144,15 @@ class LogFileController extends AbstractController
         }
 
         try {
-            $response = new BinaryFileResponse($realPath);
-            $response->setContentDisposition(
+            $response = new StreamedResponse(function () use ($realPath) {
+                readfile($realPath);
+            });
+            $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
+            $disposition = $response->headers->makeDisposition(
                 ResponseHeaderBag::DISPOSITION_ATTACHMENT,
                 $file
             );
-            $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
-            $response = new StreamedResponse(function() use ($realPath) {
-                readfile($realPath);
-            });
-
-            $response->headers->set('Content-Type', 'text/plain; charset=UTF-8');
-            $response->headers->set(
-                'Content-Disposition',
-                $response->headers->makeDisposition(
-                    ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-                    $file
-                )
-            );
+            $response->headers->set('Content-Disposition', $disposition);
             return $response;
         } catch (\Exception $e) {
             return new JsonResponse(['error' => 'Download failed: ' . $e->getMessage()], 500);

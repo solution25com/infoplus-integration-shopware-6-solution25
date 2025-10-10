@@ -12,7 +12,8 @@
       "syncSettings": "Sync Settings",
       "categorySettings": "Infoplus Categories",
       "subCategorySettings": "Infoplus Sub Categories",
-      "logInfo": "Log Info"
+      "logInfo": "Log Info",
+      "customFieldSettings": "Custom Field Settings"
     },
     "category": {
       "editTitle": "Edit Category",
@@ -234,6 +235,22 @@
         "failedToLoadLog": "Failed to load log content: {details}",
         "failedToLoadLogGeneric": "Failed to load log content",
         "downloadFailed": "Download failed: {message}"
+      }
+    },
+    "customfield": {
+      "createNew": "Create New Custom Field",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleted": "Custom field deleted.",
+      "saved": "Custom field saved.",
+      "save": "Save",
+      "columns": {
+        "technicalName": "Technical Name",
+        "label": "Label",
+        "type": "Type",
+        "isRequired": "Required",
+        "showInStorefront": "Show for Customer",
+        "active": "Active"
       }
     }
   }

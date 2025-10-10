@@ -18,7 +18,8 @@ class EventSubscriber implements EventSubscriberInterface
     public function __construct(
         private readonly SyncService $syncService,
         private readonly LoggerInterface $logger
-    ){}
+    ) {
+    }
 
     public static function getSubscribedEvents(): array
     {
@@ -40,8 +41,7 @@ class EventSubscriber implements EventSubscriberInterface
                 $ids = $event->getIds();
                 $this->syncService->syncProducts($event->getContext(), $ids);
             }
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             $this->logger->error('Error syncing products: ' . $e->getMessage(), [
                 'event' => $event,
                 'exception' => $e,
@@ -56,8 +56,7 @@ class EventSubscriber implements EventSubscriberInterface
                 $ids = $event->getIds();
                 $this->syncService->syncCustomers($event->getContext(), $ids);
             }
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             $this->logger->error('Error syncing customers: ' . $e->getMessage(), [
                 'event' => $event,
                 'exception' => $e,
@@ -75,8 +74,7 @@ class EventSubscriber implements EventSubscriberInterface
                 $orderIds = $event->getIds();
                 $this->syncService->syncOrders($orderIds, $event->getContext());
             }
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             $this->logger->error('Error syncing orders: ' . $e->getMessage(), [
                 'event' => $event,
                 'exception' => $e,
@@ -93,8 +91,7 @@ class EventSubscriber implements EventSubscriberInterface
                     $this->syncService->syncOrders([$orderId], $event->getContext());
                 }
             }
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             $this->logger->error('Error in transaction state transition: ' . $e->getMessage(), [
                 'event' => $event,
                 'exception' => $e,
@@ -102,4 +99,3 @@ class EventSubscriber implements EventSubscriberInterface
         }
     }
 }
-

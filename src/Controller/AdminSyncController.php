@@ -1,7 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace InfoPlusCommerce\Controller;
 
+use InfoPlusCommerce\Service\ConfigService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -240,7 +243,7 @@ class AdminSyncController extends AbstractController
             $result = $this->syncService->syncOrders([$id], $context);
             if (isset($result['status'])) {
                 $result = ['success' => $result['status'] != 'error', 'error' => $result['error']];
-            } else if (count($result) > 0 && is_array($result[0])) {
+            } elseif (count($result) > 0 && is_array($result[0])) {
                 $result = $result[0];
             } else {
                 $result = ['success' => false, 'error' => 'infoplus.api.errors.orderNotPaidOrAvailable'];
@@ -258,7 +261,7 @@ class AdminSyncController extends AbstractController
             $result = $this->syncService->syncProducts($context, [$id]);
             if (isset($result['status'])) {
                 $result = ['success' => $result['status'] != 'error', 'error' => $result['error']];
-            } else if (count($result) > 0 && is_array($result[0])) {
+            } elseif (count($result) > 0 && is_array($result[0])) {
                 $result = $result[0];
             } else {
                 $result = ['success' => false, 'error' => 'infoplus.api.errors.productNotAvailable'];
@@ -276,7 +279,7 @@ class AdminSyncController extends AbstractController
             $result = $this->syncService->syncCustomers($context, [$id]);
             if (isset($result['status'])) {
                 $result = ['success' => $result['status'] != 'error', 'error' => $result['error']];
-            } else if (count($result) > 0 && is_array($result[0])) {
+            } elseif (count($result) > 0 && is_array($result[0])) {
                 $result = $result[0];
             } else {
                 $result = ['success' => false, 'error' => 'infoplus.api.errors.customerNotAvailable'];
@@ -294,7 +297,7 @@ class AdminSyncController extends AbstractController
             $result = $this->syncService->syncCategories($context, [$id]);
             if (isset($result['status'])) {
                 $result = ['success' => $result['status'] != 'error', 'error' => $result['error']];
-            } else if (count($result) > 0 && is_array($result[0])) {
+            } elseif (count($result) > 0 && is_array($result[0])) {
                 $result = $result[0];
             } else {
                 $result = ['success' => false, 'error' => 'infoplus.api.errors.categoryNotAvailable'];
@@ -321,7 +324,7 @@ class AdminSyncController extends AbstractController
         try {
             $data = json_decode($request->getContent(), true);
             $name = $data['name'] ?? '';
-            $isSubCategory = (bool)$data['isSubCategory'] ?? false;
+            $isSubCategory = (bool)($data['isSubCategory'] ?? false);
 
             if (empty($name)) {
                 throw new HttpException(400, $this->translator->trans('infoplus.api.errors.categoryNameRequired'));
@@ -363,5 +366,10 @@ class AdminSyncController extends AbstractController
         } catch (\Exception $e) {
             throw new HttpException(500, $this->translator->trans('infoplus.api.errors.categoryUpdateFailed') . ' ' . $e->getMessage());
         }
+    }
+    #[Route(path: '/api/_action/infoplus/config', name: 'api.action.infoplus.config', methods: ['GET'])]
+    public function config(ConfigService $configService): JsonResponse
+    {
+        return new JsonResponse($configService->getAll());
     }
 }

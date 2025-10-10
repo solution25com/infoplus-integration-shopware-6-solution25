@@ -1,21 +1,26 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace InfoPlusCommerce\Service;
 
+use InfoPlusCommerce\Core\Content\IdMapping\IdMappingCollection;
+use InfoPlusCommerce\Core\Content\IdMapping\IdMappingEntity;
+use InfoPlusCommerce\Core\Content\OrderSync\OrderSyncEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Metric\MaxAggregation;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\Metric\MaxResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\OrFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 class IdMappingService
 {
     public function __construct(
         private readonly EntityRepository $idMappingRepository,
-        private readonly EntityRepository $orderSyncRepository,
-        private readonly EntityRepository $productRepository,
-        private readonly EntityRepository $infoplusCategoryRepository
+        private readonly EntityRepository $orderSyncRepository
     ) {
     }
 
@@ -26,9 +31,9 @@ class IdMappingService
             new EqualsFilter('entityType', $entityType),
             new EqualsFilter('shopwareId', $shopwareId)
         );
-
-        $result = $this->idMappingRepository->search($criteria, $context)->first();
-        return $result ? $result->getInfoplusId() : null;
+        /** @var IdMappingEntity|null $entity */
+        $entity = $this->idMappingRepository->search($criteria, $context)->first();
+        return $entity?->getInfoplusId();
     }
 
     public function getInfoplusInfo(string $entityType, string $shopwareId, Context $context): ?array
@@ -38,7 +43,7 @@ class IdMappingService
             new EqualsFilter('entityType', $entityType),
             new EqualsFilter('shopwareId', $shopwareId)
         );
-
+        /** @var IdMappingEntity|null $result */
         $result = $this->idMappingRepository->search($criteria, $context)->first();
         return $result ? [
             'id' => $result->getId(),
@@ -50,7 +55,7 @@ class IdMappingService
         ] : null;
     }
 
-    public function createInfoplusId(string $entityType, string $shopwareId, ?int $infoplusId = null, Context $context): int
+    public function createInfoplusId(string $entityType, string $shopwareId, Context $context, ?int $infoplusId = null): int
     {
         if ($infoplusId === null) {
             $criteria = new Criteria();
@@ -61,10 +66,9 @@ class IdMappingService
             ));
             $aggregations = $this->idMappingRepository->aggregate($criteria, $context);
             $maxAgg = $aggregations->get('max_infoplus_id');
-            $maxId = $maxAgg ? $maxAgg->getMax() : null;
+            $maxId = ($maxAgg instanceof MaxResult) ? $maxAgg->getMax() : null;
             $infoplusId = ($maxId !== null) ? ((int)$maxId + 1) : 1;
         }
-
         $existing = $this->getInfoplusInfo($entityType, $shopwareId, $context);
         if ($existing) {
             $this->idMappingRepository->update([
@@ -89,9 +93,9 @@ class IdMappingService
                 ]
             ], $context);
         }
-
         return $infoplusId;
     }
+
     public function updateInfoplusUpdatedAt(string $entityType, string $shopwareId, Context $context): void
     {
         $criteria = new Criteria();
@@ -100,6 +104,7 @@ class IdMappingService
             new EqualsFilter('shopwareId', $shopwareId)
         );
 
+        /** @var IdMappingEntity|null $idMapping */
         $idMapping = $this->idMappingRepository->search($criteria, $context)->first();
         if ($idMapping) {
             $this->idMappingRepository->update([
@@ -111,14 +116,13 @@ class IdMappingService
         }
     }
 
-    public function getOrCreateInfoplusId(string $entityType, string $shopwareId, ?int $infoplusId = null, Context $context): int
+    public function getOrCreateInfoplusId(string $entityType, string $shopwareId, Context $context, ?int $infoplusId = null): int
     {
         $existing = $this->getInfoplusId($entityType, $shopwareId, $context);
         if ($existing !== null) {
             return $existing;
         }
-
-        return $this->createInfoplusId($entityType, $shopwareId, $infoplusId, $context);
+        return $this->createInfoplusId($entityType, $shopwareId, $context, $infoplusId);
     }
 
     public function createOrderSyncRecord(
@@ -153,9 +157,10 @@ class IdMappingService
         $criteria = new Criteria();
         $criteria->addFilter(
             new EqualsFilter('shopwareOrderId', $shopwareOrderId),
-            new EqualsFilter('infoplusId', (int)$infoplusOrderId)
+            new EqualsFilter('infoplusId', $infoplusOrderId)
         );
 
+        /** @var OrderSyncEntity|null $orderSync */
         $orderSync = $this->orderSyncRepository->search($criteria, $context)->first();
         if ($orderSync) {
             $this->orderSyncRepository->update([
@@ -181,6 +186,7 @@ class IdMappingService
             new EqualsFilter('infoplusId', $infoplusOrderId)
         );
 
+        /** @var OrderSyncEntity|null $orderSync */
         $orderSync = $this->orderSyncRepository->search($criteria, $context)->first();
         if ($orderSync) {
             $this->orderSyncRepository->update([
@@ -193,20 +199,20 @@ class IdMappingService
         }
     }
 
-    public function getSyncedOrderId(string $shopwareOrderId, Context $context): ?string
+    public function getSyncedOrderId(string $shopwareOrderId, Context $context): ?int
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('shopwareOrderId', $shopwareOrderId));
-
-        $result = $this->orderSyncRepository->search($criteria, $context)->first();
-        return $result ? (string)$result->getInfoplusId() : null;
+        /** @var OrderSyncEntity|null $orderSync */
+        $orderSync = $this->orderSyncRepository->search($criteria, $context)->first();
+        return $orderSync?->getInfoplusId();
     }
 
     public function getSyncedOrder(string $shopwareOrderId, Context $context): ?array
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('shopwareOrderId', $shopwareOrderId));
-
+        /** @var OrderSyncEntity|null $result */
         $result = $this->orderSyncRepository->search($criteria, $context)->first();
         return $result ? [
             'id' => $result->getId(),
@@ -224,28 +230,34 @@ class IdMappingService
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('shopwareOrderId', $shopwareOrderId));
 
+        /** @var OrderSyncEntity|null $result */
         $result = $this->orderSyncRepository->search($criteria, $context)->first();
         return $result ? [
             'order_payment_status' => $result->getOrderPaymentStatus(),
             'order_shipping_status' => $result->getOrderShippingStatus(),
             'order_status' => $result->getOrderStatus(),
-            'sync_date' => $result->getSyncDate()->format('Y-m-d H:i:s')
+            'sync_date' => $result->getSyncDate()->format('Y-m-d H:i:s'),
         ] : null;
     }
+
+    /**
+     * @return array<int, mixed>
+     */
     public function getPendingShipmentOrders(Context $context, ?string $id = null): array
     {
         $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('shopwareOrderId', $id));
+        if ($id !== null) {
+            $criteria->addFilter(new EqualsFilter('shopwareOrderId', $id));
+        }
         $criteria->addFilter(
             new EqualsFilter('orderShippingStatus', 'open'),
             new EqualsFilter('orderPaymentStatus', 'paid')
         );
 
-        $result = $this->orderSyncRepository->search($criteria, $context);
-        return $result->getElements();
+        return $this->orderSyncRepository->search($criteria, $context)->getElements();
     }
 
-    public function deleteInfoplusId(string $entityType, string $shopwareId, Context $context)
+    public function deleteInfoplusId(string $entityType, string $shopwareId, Context $context): void
     {
         $criteria = new Criteria();
         $criteria->addFilter(
@@ -253,9 +265,49 @@ class IdMappingService
             new EqualsFilter('shopwareId', $shopwareId)
         );
 
+        /** @var OrderSyncEntity|null $orderSync */
+        $orderSync = $this->orderSyncRepository->search($criteria, $context)->first();
+        if ($orderSync) {
+            $this->orderSyncRepository->delete([[ 'id' => $orderSync->getId() ]], $context);
+        }
+    }
+
+    public function deleteIdMapping(string $entityType, string $shopwareId, Context $context): void
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(
+            new EqualsFilter('entityType', $entityType),
+            new EqualsFilter('shopwareId', $shopwareId)
+        );
+
+        /** @var IdMappingEntity|null $idMapping */
         $idMapping = $this->idMappingRepository->search($criteria, $context)->first();
         if ($idMapping) {
-            $this->idMappingRepository->delete([['id' => $idMapping->getId()]], $context);
+            $this->idMappingRepository->delete([[ 'id' => $idMapping->getId() ]], $context);
         }
+    }
+
+    /**
+     * Batch fetch infoplus IDs for a set of products.
+     * @param string $entityType
+     * @param array $shopwareIds
+     * @param Context $context
+     * @return array shopwareId => infoplusId
+     */
+    public function getInfoplusIdsForProducts(string $entityType, array $shopwareIds, Context $context): array
+    {
+        if (empty($shopwareIds)) {
+            return [];
+        }
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('entityType', $entityType));
+        $criteria->addFilter(new OrFilter(array_map(fn($id) => new EqualsFilter('shopwareId', $id), $shopwareIds)));
+        /** @var IdMappingCollection|IdMappingEntity[] $entities */
+        $entities = $this->idMappingRepository->search($criteria, $context)->getEntities();
+        $result = [];
+        foreach ($entities as $entity) {
+            $result[$entity->getShopwareId()] = $entity->getInfoplusId();
+        }
+        return $result;
     }
 }

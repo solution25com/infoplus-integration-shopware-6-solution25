@@ -1,0 +1,19 @@
+{% sw_extends '@Storefront/storefront/component/line-item/type/product.html.twig' %}
+
+{% block component_line_item_type_product_details_container %}
+    {{ parent() }}
+    {% if displayMode is defined and displayMode == 'order' %}
+        {% set infoplus = lineItem.extensions.infoplusCustomFields ?? [] %}
+        {% if infoplus|length > 0 %}
+            <div class="infoplus-order-customfields" style="margin-top: .5rem;">
+                <dl class="row">
+                    {% for f in infoplus %}
+                        <dt class="col-4">{{ f.label }}</dt>
+                        <dd class="col-8">{{ f.value }}</dd>
+                    {% endfor %}
+                </dl>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endblock %}
+

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace InfoPlusCommerce\Core\Content\OrderSync;
 
@@ -12,6 +14,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IntField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\DateTimeField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
+
 class OrderSyncDefinition extends EntityDefinition
 {
     public const ENTITY_NAME = 'infoplus_order_sync';

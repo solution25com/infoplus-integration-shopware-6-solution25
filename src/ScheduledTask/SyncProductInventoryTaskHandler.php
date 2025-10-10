@@ -1,45 +1,24 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace InfoPlusCommerce\ScheduledTask;
 
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskHandler;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use InfoPlusCommerce\Service\SyncService;
-use InfoPlusCommerce\Service\IdMappingService;
-use Psr\Log\LoggerInterface;
+use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-class SyncProductInventoryTaskHandler extends ScheduledTaskHandler
+#[AsMessageHandler]
+class SyncProductInventoryTaskHandler
 {
-    private SyncService $syncService;
-    private IdMappingService $idMappingService;
-    private EntityRepository $productRepository;
-    private LoggerInterface $logger;
-
     public function __construct(
-        EntityRepository $scheduledTaskRepository,
-        SyncService $syncService,
-        IdMappingService $idMappingService,
-        EntityRepository $productRepository,
-        LoggerInterface $logger
+        private readonly SyncService $syncService
     ) {
-        parent::__construct($scheduledTaskRepository);
-        $this->syncService = $syncService;
-        $this->idMappingService = $idMappingService;
-        $this->productRepository = $productRepository;
-        $this->logger = $logger;
     }
 
-    public static function getHandledMessages(): iterable
+    public function __invoke(SyncProductInventoryTask $task): void
     {
-        return [SyncProductInventoryTask::class];
-    }
-
-    public function run(): void
-    {
-        $context = Context::createDefaultContext();
-        $this->syncService->syncInventory($context);
+        $this->syncService->syncInventory(Context::createCLIContext());
     }
 }

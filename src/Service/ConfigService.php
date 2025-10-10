@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace InfoPlusCommerce\Service;
 
@@ -20,6 +22,14 @@ class ConfigService
     public function set(string $key, mixed $value): void
     {
         $this->systemConfigService->set(self::CONFIG_DOMAIN . $key, $value);
+    }
+
+    /**
+     * Returns the default carrier id; supports legacy key 'carrierId' for backward compatibility.
+     */
+    public function getDefaultCarrierId(): mixed
+    {
+        return $this->get('carrierId');
     }
 
     public function getAll(): array

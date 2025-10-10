@@ -12,7 +12,8 @@
       "syncSettings": "Synchronisationseinstellungen",
       "categorySettings": "InfoPlus Kategorien",
       "subCategorySettings": "InfoPlus Unterkategorien",
-      "logInfo": "Log Info"
+      "logInfo": "Log Info",
+      "customFieldSettings": "Benutzerdefinierte Felder"
     },
     "category": {
       "editTitle": "Kategorie bearbeiten",
@@ -167,7 +168,7 @@
         "customerSyncDisabled": "Kundensynchronisation ist in der Konfiguration deaktiviert",
         "noCustomersFound": "Keine Kunden für die Synchronisierung gefunden",
         "inventorySyncDisabled": "Lagerbestandssynchronisation ist in der Konfiguration deaktiviert",
-        "noProductsFoundForInventory": "Keine Produkte für die Lagerbestandssynchronisierung gefunden",
+        "noProductsFoundForInventory": "Keine Produkte für die Lagerbestandssynchronisation gefunden",
         "orderSyncDisabled": "Bestellsynchronisation ist in der Konfiguration deaktiviert",
         "noOrdersFound": "Keine Bestellungen für die Synchronisierung gefunden",
         "failedToFetchCarriers": "Versanddienstleister konnten nicht abgerufen werden",
@@ -234,6 +235,22 @@
         "failedToLoadLog": "Log-Inhalt konnte nicht geladen werden: {details}",
         "failedToLoadLogGeneric": "Log-Inhalt konnte nicht geladen werden",
         "downloadFailed": "Download fehlgeschlagen: {message}"
+      }
+    },
+    "customfield": {
+      "createNew": "Neues benutzerdefiniertes Feld erstellen",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "deleted": "Benutzerdefiniertes Feld gelöscht.",
+      "saved": "Benutzerdefiniertes Feld gespeichert.",
+      "save": "Speichern",
+      "columns": {
+        "technicalName": "Technischer Name",
+        "label": "Bezeichnung",
+        "type": "Typ",
+        "isRequired": "Erforderlich",
+        "showInStorefront": "",
+        "active": "Aktiv"
       }
     }
   }

@@ -36,6 +36,10 @@ Module.register('infoplus-settings', {
                 logs: {
                     component: 'log-viewer',
                     path: 'logs',
+                },
+                customfields: {
+                    component: 'infoplus-customfields',
+                    path: 'customfields',
                 }
             }
         },
@@ -53,6 +57,14 @@ Module.register('infoplus-settings', {
             props: {
                 default: true
             }
+        },
+        addCustomField: {
+            component: 'infoplus-new-customfield',
+            path: 'addCustomField',
+        },
+        editCustomField: {
+            component: 'infoplus-edit-customfield',
+            path: 'editCustomField/:id',
         }
     },
 
@@ -62,4 +74,3 @@ Module.register('infoplus-settings', {
         icon: 'regular-cog'
     }
 });
-

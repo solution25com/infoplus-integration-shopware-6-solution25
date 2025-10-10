@@ -2,21 +2,22 @@
 
 namespace InfoPlusCommerce\Message;
 
-use Shopware\Core\Framework\Context;
-
 class SyncOrdersMessage
 {
-    public function __construct(
-        private readonly Context $context,
-        private readonly array $orderIds
-    ) {
-    }
+    /** @var array<int, string> */
+    private array $orderIds;
 
-    public function getContext(): Context
+    /**
+     * @param array<int, string> $orderIds
+     */
+    public function __construct(array $orderIds)
     {
-        return $this->context;
+        $this->orderIds = $orderIds;
     }
 
+    /**
+     * @return array<int, string>
+     */
     public function getOrderIds(): array
     {
         return $this->orderIds;

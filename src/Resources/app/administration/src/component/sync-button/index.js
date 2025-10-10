@@ -61,7 +61,7 @@ Component.register('sync-button', {
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     return response.json();
                 })
-                .then(data => {
+                .then(() => {
                     const syncButton = document.getElementById('infoplus-sync-btn');
                     if (syncButton) {
                         syncButton.disabled = true;
@@ -72,7 +72,10 @@ Component.register('sync-button', {
                     }
                 })
                 .catch(error => {
-                    alert(this.$tc('infoplus.sync.synchronizationFailed') + error);
+                    this.createNotificationError({
+                        title: this.$tc('infoplus.sync.errorTitle'),
+                        message: this.$tc('infoplus.sync.synchronizationFailed') + error,
+                    });
                     const syncButton = document.getElementById('infoplus-sync-btn');
                     if (syncButton) {
                         syncButton.disabled = false;

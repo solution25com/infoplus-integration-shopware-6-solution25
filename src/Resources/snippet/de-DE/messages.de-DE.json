@@ -1,0 +1,32 @@
+{
+  "infoplus": {
+    "service": {
+      "errors": {
+        "categorySyncDisabled": "Die Kategoriesynchronisierung ist in der Konfiguration deaktiviert.",
+        "noCategoriesFound": "Keine Kategorien für die Synchronisierung gefunden.",
+        "productSyncDisabled": "Die Produktsynchronisierung ist in der Konfiguration deaktiviert.",
+        "failedToFetchItemBySku": "Artikel konnte anhand der SKU nicht abgerufen werden.",
+        "orderSyncDisabled": "Die Auftragssynchronisierung ist in der Konfiguration deaktiviert.",
+        "noOrdersFound": "Keine Aufträge für die Synchronisierung gefunden."
+      }
+    },
+    "api": {
+      "status": {
+        "categoryCreated": "Kategorie erfolgreich erstellt.",
+        "categoryUpdated": "Kategorie erfolgreich aktualisiert.",
+        "categoryDeleted": "Kategorie erfolgreich gelöscht."
+      },
+      "errors": {
+        "categoryNotFound": "Kategorie nicht gefunden.",
+        "failedToFetchItemBySku": "Artikel konnte anhand der SKU nicht abgerufen werden."
+      }
+    },
+    "shipping": {
+      "cardTitle": "InfoPlus",
+      "carrierSelectLabel": "Carrier",
+      "carrierSelectPlaceholder": "Carrier auswählen (leer lassen für Standard)",
+      "helpDefaultCarrier": "Wenn leer, wird der Standard-Carrier aus der Plugin-Konfiguration verwendet.",
+      "unknownCarrierPrefix": "Unbekannte Carrier-ID"
+    }
+  }
+}

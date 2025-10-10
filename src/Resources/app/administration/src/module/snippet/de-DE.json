@@ -12,7 +12,8 @@
       "syncSettings": "Synchronisationseinstellungen",
       "categorySettings": "InfoPlus Kategorien",
       "subCategorySettings": "InfoPlus Unterkategorien",
-      "logInfo": "Log Info"
+      "logInfo": "Log Info",
+      "customFieldSettings": "Benutzerdefinierte Felder"
     },
     "category": {
       "editTitle": "Kategorie bearbeiten",
@@ -55,6 +56,8 @@
       "selectSubCategoryPlaceholder": "Eine Unterkategorie auswählen",
       "syncing": "Produkt wird mit Infoplus synchronisiert...",
       "syncedAtPrefix": "Produkt synchronisiert am",
+      "customFieldsTitle": "Infoplus Custom Fields",
+      "selectOption": "-- Select Option --",
       "errors": {
         "missingId": "Produkt-ID ist für die Synchronisierung nicht verfügbar.",
         "categoryRequired": "Kategorie und Unterkategorie Auswahl ist erforderlich.",
@@ -163,11 +166,11 @@
         "categorySyncDisabled": "Kategoriesynchronisation ist in der Konfiguration deaktiviert",
         "noCategoriesFound": "Keine Kategorien für die Synchronisierung gefunden",
         "productSyncDisabled": "Produktsynchronisation ist in der Konfiguration deaktiviert",
-        "noProductsFound": "Keine Produkte für die Synchronisierung gefunden",
+        "noProductsFound": "Keine Produkte für die Synchronisation gefunden",
         "customerSyncDisabled": "Kundensynchronisation ist in der Konfiguration deaktiviert",
         "noCustomersFound": "Keine Kunden für die Synchronisierung gefunden",
         "inventorySyncDisabled": "Lagerbestandssynchronisation ist in der Konfiguration deaktiviert",
-        "noProductsFoundForInventory": "Keine Produkte für die Lagerbestandssynchronisierung gefunden",
+        "noProductsFoundForInventory": "Keine Produkte für die Lagerbestandssynchronisation gefunden",
         "orderSyncDisabled": "Bestellsynchronisation ist in der Konfiguration deaktiviert",
         "noOrdersFound": "Keine Bestellungen für die Synchronisierung gefunden",
         "failedToFetchCarriers": "Versanddienstleister konnten nicht abgerufen werden",
@@ -235,6 +238,32 @@
         "failedToLoadLogGeneric": "Log-Inhalt konnte nicht geladen werden",
         "downloadFailed": "Download fehlgeschlagen: {message}"
       }
+    },
+    "customfield": {
+      "createNew": "Neues benutzerdefiniertes Feld erstellen",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "deleted": "Benutzerdefiniertes Feld gelöscht.",
+      "saved": "Benutzerdefiniertes Feld gespeichert.",
+      "save": "Speichern",
+      "optionsPlaceholder": "Optionen durch Komma getrennt eingeben",
+      "columns": {
+        "technicalName": "Technischer Name",
+        "label": "Bezeichnung",
+        "type": "Typ",
+        "isRequired": "Erforderlich",
+        "active": "Aktiv",
+        "showInStorefront": "Show for Customer",
+        "position": "Position",
+        "options": "Optionen"
+      }
+    },
+    "shipping": {
+      "cardTitle": "InfoPlus",
+      "carrierSelectLabel": "Carrier",
+      "carrierSelectPlaceholder": "Carrier auswählen (leer lassen für Standard)",
+      "helpDefaultCarrier": "Wenn leer, wird der Standard-Carrier aus der Plugin-Konfiguration verwendet.",
+      "unknownCarrierPrefix": "Unbekannte Carrier-ID"
     }
   }
 }

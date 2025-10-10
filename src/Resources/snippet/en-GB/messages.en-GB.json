@@ -1,0 +1,36 @@
+{
+  "infoplus": {
+    "service": {
+      "errors": {
+        "categorySyncDisabled": "Category synchronization is disabled in the configuration.",
+        "noCategoriesFound": "No categories found for synchronization.",
+        "productSyncDisabled": "Product synchronization is disabled in the configuration.",
+        "failedToFetchItemBySku": "Failed to fetch item by SKU.",
+        "orderSyncDisabled": "Order synchronization is disabled in the configuration.",
+        "noOrdersFound": "No orders found for synchronization."
+      }
+    },
+    "api": {
+      "status": {
+        "categoryCreated": "Category created successfully.",
+        "categoryUpdated": "Category updated successfully.",
+        "categoryDeleted": "Category deleted successfully."
+      },
+      "errors": {
+        "categoryNotFound": "Category not found.",
+        "failedToFetchItemBySku": "Failed to fetch item by SKU."
+      }
+    },
+    "product": {
+      "customFieldsTitle": "Custom Fields",
+      "selectOption": "-- Select Option --"
+    },
+    "shipping": {
+      "cardTitle": "InfoPlus",
+      "carrierSelectLabel": "Carrier",
+      "carrierSelectPlaceholder": "Select a carrier (leave empty to use default)",
+      "helpDefaultCarrier": "If empty, the default carrier from plugin configuration is used.",
+      "unknownCarrierPrefix": "Unknown carrier id"
+    }
+  }
+}

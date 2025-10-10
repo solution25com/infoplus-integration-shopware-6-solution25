@@ -21,10 +21,15 @@
                               :route="{ name: 'infoplus.settings.index.subCategories', params: { isSubCategory: true } }">
                     {{ $tc('infoplus.settings.subCategorySettings') }}
                 </sw-tabs-item>
+                <sw-tabs-item name="customfield-settings"
+                              :route="{ name: 'infoplus.settings.index.customfields' }">
+                    {{ $tc('infoplus.settings.customFieldSettings') }}
+                </sw-tabs-item>
                 <sw-tabs-item name="error-log-settings"
                               :route="{ name: 'infoplus.settings.index.logs' }">
                     {{ $tc('infoplus.settings.logInfo') }}
                 </sw-tabs-item>
+
             </sw-tabs>
             <router-view></router-view>
         </sw-card-view>

@@ -11,27 +11,21 @@
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
         </service>
 
-
-
         <service id="InfoPlusCommerce\Client\InfoplusApiClient">
             <argument type="service" id="InfoPlusCommerce\Service\ConfigService"/>
             <argument type="service" id="InfoPlus.logger"/>
             <argument type="service" id="limiter.infoplus_user_limiter"/>
             <argument type="service" id="limiter.infoplus_domain_limiter"/>
         </service>
-        <service id="InfoPlusCommerce\Service\SyncService">
-            <argument type="service" id="InfoPlusCommerce\Service\ConfigService"/>
-            <argument type="service" id="InfoPlusCommerce\Client\InfoplusApiClient"/>
-            <argument type="service" id="InfoPlus.logger"/>
-            <argument type="service" id="product.repository"/>
-            <argument type="service" id="infoplus_category.repository"/>
-            <argument type="service" id="customer.repository"/>
-            <argument type="service" id="order.repository"/>
-            <argument type="service" id="InfoPlusCommerce\Service\IdMappingService"/>
-            <argument type="service" id="translator"/>
-            <argument type="service" id="Shopware\Core\System\StateMachine\StateMachineRegistry"/>
-            <tag name="shopware.message_handler" handler="handle"/>
-        </service>
+
+        <service id="InfoPlusCommerce\Service\CategorySyncService" autowire="true" autoconfigure="true"/>
+        <service id="InfoPlusCommerce\Service\ProductSyncService" autowire="true" autoconfigure="true"/>
+        <service id="InfoPlusCommerce\Service\CustomerSyncService" autowire="true" autoconfigure="true"/>
+        <service id="InfoPlusCommerce\Service\OrderSyncService" autowire="true" autoconfigure="true"/>
+        <service id="InfoPlusCommerce\Service\InventorySyncService" autowire="true" autoconfigure="true"/>
+
+        <service id="InfoPlusCommerce\Service\SyncService" autowire="true" autoconfigure="true"/>
+
         <service id="InfoPlusCommerce\MessageHandler\SyncOrdersHandler">
             <argument type="service" id="InfoPlusCommerce\Service\SyncService"/>
             <argument type="service" id="InfoPlus.logger"/>
@@ -47,9 +41,12 @@
             </call>
         </service>
 
-        <service id="InfoPlusCommerce\Controller\AdminConfigController" public="true">
-            <argument type="service" id="InfoPlusCommerce\Service\ConfigService"/>
-            <argument type="service" id="translator"/>
+        <service id="InfoPlusCommerce\Service\AdminCustomFieldService">
+            <argument type="service" id="infoplus_field_definition.repository"/>
+        </service>
+
+        <service id="InfoPlusCommerce\Controller\AdminCustomFieldController" public="true" >
+            <argument type="service" id="InfoPlusCommerce\Service\AdminCustomFieldService"/>
             <tag name="controller.service_arguments"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
@@ -62,16 +59,9 @@
             <tag name="kernel.event_subscriber"/>
         </service>
 
-        <service id="infoplus_commerce.service" class="InfoPlusCommerce\Service\InfoplusCommerceService">
-            <argument type="service" id="Shopware\Core\Framework\Api\Context\SystemSource"/>
-            <argument type="service" id="Shopware\Core\Framework\Api\Serializer\JsonApiEncoder"/>
-        </service>
-
         <service id="InfoPlusCommerce\Service\IdMappingService">
             <argument type="service" id="infoplus_id_mapping.repository" />
             <argument type="service" id="infoplus_order_sync.repository" />
-            <argument type="service" id="plugin.repository" />
-            <argument type="service" id="infoplus_category.repository"/>
         </service>
 
         <!-- Rate limiter storage -->
@@ -99,12 +89,14 @@
             </argument>
             <argument type="service" id="infoplus.rate_limiter.storage"/>
         </service>
+
         <service id="InfoPlusCommerce\Command\SyncCommand">
             <argument type="service" id="InfoPlusCommerce\Service\SyncService"/>
             <argument type="service" id="InfoPlus.logger"/>
             <argument type="service" id="order.repository"/>
             <tag name="console.command"/>
         </service>
+
         <service id="InfoPlusCommerce\Core\Content\IdMapping\IdMappingDefinition">
             <tag name="shopware.entity.definition" entity="infoplus_id_mapping"/>
         </service>
@@ -114,27 +106,23 @@
         <service id="InfoPlusCommerce\Core\Content\InfoplusCategory\InfoplusCategoryDefinition">
             <tag name="shopware.entity.definition" entity="infoplus_category"/>
         </service>
+
         <service id="InfoPlusCommerce\ScheduledTask\SyncPaidOrdersTask">
             <tag name="shopware.scheduled.task" />
         </service>
         <service id="InfoPlusCommerce\ScheduledTask\SyncPaidOrdersTaskHandler">
-            <argument type="service" id="scheduled_task.repository" />
             <argument type="service" id="InfoPlusCommerce\Service\SyncService" />
-            <argument type="service" id="InfoPlusCommerce\Service\IdMappingService" />
-            <argument type="service" id="logger" />
-            <tag name="messenger.message_handler" />
+            <tag name="messenger.message_handler"/>
         </service>
+
         <service id="InfoPlusCommerce\ScheduledTask\SyncProductInventoryTask">
             <tag name="shopware.scheduled.task" />
         </service>
         <service id="InfoPlusCommerce\ScheduledTask\SyncProductInventoryTaskHandler">
-            <argument type="service" id="scheduled_task.repository" />
-            <argument type="service" id="InfoPlusCommerce\Service\SyncService" />
-            <argument type="service" id="InfoPlusCommerce\Service\IdMappingService" />
-            <argument type="service" id="product.repository" />
-            <argument type="service" id="logger" />
-            <tag name="messenger.message_handler" />
+            <argument type="service" id="InfoPlusCommerce\Service\SyncService"/>
+            <tag name="messenger.message_handler"/>
         </service>
+
         <!-- Logger -->
         <service id="InfoPlus.logger" class="Monolog\Logger">
             <argument type="string">InfoPlus</argument>
@@ -147,5 +135,31 @@
             <argument type="string">%kernel.logs_dir%/InfoPlus-log-%kernel.environment%.log</argument>
         </service>
         <!-- End Logger -->
+
+        <service id="InfoPlusCommerce\Core\Content\InfoplusFieldDefinition\InfoplusFieldDefinitionEntity" autowire="true" autoconfigure="true"/>
+        <service id="InfoPlusCommerce\Core\Content\InfoplusFieldDefinition\InfoplusFieldDefinitionCollection" autowire="true" autoconfigure="true"/>
+        <service id="InfoPlusCommerce\Core\Content\InfoplusFieldDefinition\InfoplusFieldDefinitionDefinition" autowire="true" autoconfigure="true"/>
+
+        <service id="InfoPlusCommerce\Storefront\Subscriber\InfoplusProductPageSubscriber">
+            <argument type="service" id="infoplus_field_definition.repository"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="InfoPlusCommerce\Storefront\Subscriber\InfoplusCartSubscriber">
+            <argument type="service" id="request_stack"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="InfoPlusCommerce\Subscriber\InfoplusOrderPlacedSubscriber">
+            <argument type="service" id="order_line_item.repository"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="InfoPlusCommerce\Controller\InfoplusLineItemCustomFieldController" public="true" autowire="true" autoconfigure="true" />
+
+        <service id="InfoPlusCommerce\Storefront\Subscriber\InfoplusOrderDetailSubscriber">
+            <argument type="service" id="infoplus_field_definition.repository"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
     </services>
 </container>

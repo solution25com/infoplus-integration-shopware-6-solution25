@@ -1,4 +1,4 @@
-const { Criteria, EntityCollection } = Shopware.Data;
+const { Criteria } = Shopware.Data;
 import template from './sw-product-detail-base.html.twig';
 
 Shopware.Component.override('sw-product-detail-base', {
@@ -16,11 +16,18 @@ Shopware.Component.override('sw-product-detail-base', {
             selectedSubCategory: null,
             selectedCategoryInternalId: null,
             selectedSubCategoryInternalId: null,
+            infoplusCustomFields: [],
+            expandedFields: {},
+            cachedFieldValues: {},
+            fieldsVisibilityInitialized: false,
+            initialInfoplusKeys: new Set(),
         };
     },
 
-    created() {
-        this.loadProduct();
+    async created() {
+        await this.loadProduct();
+        await this.loadInfoplusCustomFields();
+        this.tryInitFieldVisibility();
         this.loadInfoplusInformation();
     },
 
@@ -58,11 +65,14 @@ Shopware.Component.override('sw-product-detail-base', {
             criteria.addFilter(Criteria.equals('id', productId));
             try {
                 this.product = await productRepository.get(productId, Shopware.Context.api, criteria);
+                this.product.customFields = this.product.customFields || {};
+                const keys = Object.keys(this.product.customFields || {}).filter(k => k.startsWith('infoplus_'));
+                this.initialInfoplusKeys = new Set(keys);
                 await this.loadCustomFields();
             } catch (error) {
                 console.error('Load Product Error:', error);
                 this.createNotificationError({
-                    title: this.$tc('infoplus.common.errorTitle'),
+                    title: this.$tc('infoplus.common.syncErrorTitle'),
                     message: `${this.$tc('infoplus.product.errors.failedToLoad')} ${error.message}`,
                 });
             }
@@ -93,7 +103,7 @@ Shopware.Component.override('sw-product-detail-base', {
             } catch (error) {
                 console.error('Infoplus Information Error:', error);
                 this.createNotificationError({
-                    title: this.$tc('infoplus.syncErrorTitle'),
+                    title: this.$tc('infoplus.common.syncErrorTitle'),
                     message: `${this.$tc('infoplus.product.errors.failedToGetData')} ${error.message}`,
                 });
             }
@@ -105,7 +115,7 @@ Shopware.Component.override('sw-product-detail-base', {
                 this.selectedSubCategory = null;
                 this.selectedCategoryInternalId = null;
                 this.selectedSubCategoryInternalId = null;
-                console.log('No product_infoplus_data custom fields found');
+                console.warn('No product_infoplus_data custom fields found');
                 return;
             }
 
@@ -154,28 +164,180 @@ Shopware.Component.override('sw-product-detail-base', {
             }
         },
 
-        async onCategoryChange(id, item) {
+        async loadInfoplusCustomFields() {
+            try {
+                const response = await fetch('/api/_action/infoplus/customfields', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${Shopware.Context.api.authToken.access}`,
+                    }
+                });
+                if (!response.ok) throw new Error('Failed to load custom fields');
+                const apiFields = await response.json();
+                this.infoplusCustomFields = apiFields.map(field => {
+                    let options = field.options || [];
+
+                    if (field.type === 'select') {
+                        if (typeof options === 'string') {
+                            try {
+                                const parsed = JSON.parse(options);
+                                options = Array.isArray(parsed) ? parsed : [];
+                            } catch {
+                                options = options.split(',').map(v => v.trim()).filter(Boolean);
+                            }
+                        }
+
+                        if (Array.isArray(options) && options.length > 0 && typeof options[0] === 'object') {
+                            options = options.map(opt => {
+                                const value = opt.value != null ? opt.value : opt.id != null ? opt.id : String(opt);
+                                const label = opt.label != null ? opt.label : opt.name != null ? opt.name : String(opt);
+                                return { value, label, name: label };
+                            });
+                        } else if (Array.isArray(options)) {
+                            options = options.map(opt => {
+                                const v = String(opt);
+                                return { value: v, label: v, name: v };
+                            });
+                        } else {
+                            options = [];
+                        }
+
+                        const seen = new Set();
+                        options = options.filter(opt => {
+                            const key = `${opt.value}`;
+                            if (seen.has(key)) return false;
+                            seen.add(key);
+                            return true;
+                        });
+                    }
+
+                    return {
+                        technical_name: field.technicalName,
+                        label: field.label,
+                        type: field.type,
+                        is_required: field.isRequired,
+                        options
+                    };
+                });
+            } catch (e) {
+                this.createNotificationError({
+                    title: this.$tc('infoplus.common.errorTitle'),
+                    message: e.message
+                });
+            }
+        },
+
+        tryInitFieldVisibility() {
+            if (this.fieldsVisibilityInitialized) {
+                return;
+            }
+            if (!this.product || !Array.isArray(this.infoplusCustomFields) || this.infoplusCustomFields.length === 0) {
+                return;
+            }
+            const expanded = {};
+            this.infoplusCustomFields.forEach((field) => {
+                const key = 'infoplus_' + field.technical_name;
+                const value = this.product.customFields ? this.product.customFields[key] : undefined;
+                if (value === null && this.product && this.product.customFields) {
+                    this.$delete(this.product.customFields, key);
+                }
+                const effectiveValue = this.product.customFields ? this.product.customFields[key] : undefined;
+                const hasMeaningfulValue = (
+                    effectiveValue !== undefined && effectiveValue !== null && (
+                        typeof effectiveValue === 'boolean' ||
+                        (typeof effectiveValue === 'number' && !Number.isNaN(effectiveValue)) ||
+                        (typeof effectiveValue === 'string' && effectiveValue.trim().length > 0)
+                    )
+                );
+                expanded[field.technical_name] = hasMeaningfulValue;
+            });
+            this.expandedFields = expanded;
+            this.fieldsVisibilityInitialized = true;
+        },
+
+        toggleField(technicalName) {
+            const currentlyExpanded = !!this.expandedFields[technicalName];
+            this.$set(this.expandedFields, technicalName, !currentlyExpanded);
+            const key = 'infoplus_' + technicalName;
+            if (currentlyExpanded) {
+                const currentValue = this.product?.customFields ? this.product.customFields[key] : undefined;
+                if (currentValue !== undefined) {
+                    this.$set(this.cachedFieldValues, technicalName, currentValue);
+                }
+                const hasMeaningful = (
+                    currentValue !== undefined && currentValue !== null && (
+                        typeof currentValue === 'boolean' ||
+                        (typeof currentValue === 'number' && !Number.isNaN(currentValue)) ||
+                        (typeof currentValue === 'string' && currentValue.trim().length > 0)
+                    )
+                );
+                const hadPreviously = this.initialInfoplusKeys && this.initialInfoplusKeys.has(key);
+                if (hadPreviously || hasMeaningful) {
+                    if (this.product && this.product.customFields) {
+                        this.$set(this.product.customFields, key, null);
+                    }
+                } else {
+                    if (this.product && this.product.customFields && Object.prototype.hasOwnProperty.call(this.product.customFields, key)) {
+                        this.$delete(this.product.customFields, key);
+                    }
+                }
+            } else {
+                if (Object.prototype.hasOwnProperty.call(this.cachedFieldValues, technicalName)) {
+                    const cached = this.cachedFieldValues[technicalName];
+                    if (this.product && this.product.customFields) {
+                        this.$set(this.product.customFields, key, cached);
+                    }
+                } else if (this.product && this.product.customFields && this.product.customFields[key] === null) {
+                    this.$delete(this.product.customFields, key);
+                }
+            }
+        },
+
+        async onCategoryChange(id) {
             this.selectedCategory = id;
-            this.selectedCategoryInternalId = item ? item.internalId : null;
             if (!this.product) {
                 console.error('Product not loaded');
                 return;
             }
             if (!this.product.customFields) {
                 this.product.customFields = {};
+            }
+            if (id) {
+                try {
+                    const repo = this.repositoryFactory.create('infoplus_category');
+                    const category = await repo.get(id, Shopware.Context.api);
+                    this.selectedCategoryInternalId = category ? category.internalId : null;
+                } catch (e) {
+                    console.error('Failed to load selected category', e);
+                    this.selectedCategoryInternalId = null;
+                }
+            } else {
+                this.selectedCategoryInternalId = null;
             }
             this.product.customFields.infoplus_major_group_id = this.selectedCategoryInternalId;
         },
 
-        async onSubCategoryChange(id, item) {
+        async onSubCategoryChange(id) {
             this.selectedSubCategory = id;
-            this.selectedSubCategoryInternalId = item ? item.internalId : null;
             if (!this.product) {
                 console.error('Product not loaded');
                 return;
             }
             if (!this.product.customFields) {
                 this.product.customFields = {};
+            }
+            if (id) {
+                try {
+                    const repo = this.repositoryFactory.create('infoplus_category');
+                    const sub = await repo.get(id, Shopware.Context.api);
+                    this.selectedSubCategoryInternalId = sub ? sub.internalId : null;
+                } catch (e) {
+                    console.error('Failed to load selected subcategory', e);
+                    this.selectedSubCategoryInternalId = null;
+                }
+            } else {
+                this.selectedSubCategoryInternalId = null;
             }
             this.product.customFields.infoplus_sub_group_id = this.selectedSubCategoryInternalId;
         },

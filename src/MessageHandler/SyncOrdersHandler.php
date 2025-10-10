@@ -6,6 +6,7 @@ use InfoPlusCommerce\Message\SyncOrdersMessage;
 use InfoPlusCommerce\Service\SyncService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Shopware\Core\Framework\Context;
 
 #[AsMessageHandler]
 class SyncOrdersHandler
@@ -18,13 +19,13 @@ class SyncOrdersHandler
 
     public function __invoke(SyncOrdersMessage $message): void
     {
+        $orderIds = $message->getOrderIds();
         $this->logger->info('[InfoPlus] Starting background order sync', [
             'channel' => 'infoplus',
-            'orderIds' => $message->getOrderIds()
+            'orderIds' => $orderIds
         ]);
-        $context = $message->getContext();
-        $orderIds = $message->getOrderIds();
 
+        $context = Context::createCLIContext();
         $result = $this->syncService->syncOrders($orderIds, $context);
         $this->logger->info('[InfoPlus] Background order sync completed', [
             'channel' => 'infoplus',

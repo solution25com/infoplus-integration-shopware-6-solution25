@@ -1,7 +1,10 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace InfoPlusCommerce;
 
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\OrFilter;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
@@ -14,6 +17,9 @@ use Shopware\Core\System\CustomField\CustomFieldTypes;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Doctrine\DBAL\Connection;
+use Shopware\Core\System\CustomField\Aggregate\CustomFieldSet\CustomFieldSetEntity;
+use Shopware\Core\System\CustomField\CustomFieldEntity;
 
 class InfoPlusCommerce extends Plugin
 {
@@ -31,6 +37,7 @@ class InfoPlusCommerce extends Plugin
         }
 
         $this->deleteCustomFields($uninstallContext->getContext());
+        $this->dropPluginData($uninstallContext->getContext());
     }
 
     public function activate(ActivateContext $activateContext): void
@@ -38,23 +45,10 @@ class InfoPlusCommerce extends Plugin
         $this->createCustomFields($activateContext->getContext());
     }
 
-    public function deactivate(DeactivateContext $deactivateContext): void
-    {
-    }
-
     public function update(UpdateContext $updateContext): void
     {
         $this->createCustomFields($updateContext->getContext());
     }
-
-    public function postInstall(InstallContext $installContext): void
-    {
-    }
-
-    public function postUpdate(UpdateContext $updateContext): void
-    {
-    }
-
     private function createCustomFields(Context $context): void
     {
         /** @var EntityRepository $customFieldSetRepository */
@@ -69,6 +63,7 @@ class InfoPlusCommerce extends Plugin
         // Ensure the Custom Field Set exists (search by name, reuse ID if found)
         $setCriteria = (new Criteria())->addFilter(new EqualsFilter('name', $setName));
         $existingSet = $customFieldSetRepository->search($setCriteria, $context)->first();
+        /** @var CustomFieldSetEntity|null $existingSet */
         $setId = $existingSet ? $existingSet->getId() : Uuid::randomHex();
 
         $setPayload = [
@@ -141,10 +136,17 @@ class InfoPlusCommerce extends Plugin
         ];
 
         $upserts = [];
+        $fieldNames = array_keys($fields);
+        $criteria = (new Criteria())->addFilter(new EqualsFilter('customFieldSetId', $setId));
+        $criteria->addFilter(new OrFilter(array_map(fn($name) => new EqualsFilter('name', $name), $fieldNames)));
+        /** @var CustomFieldEntity[] $existingFields */
+        $existingFields = $customFieldRepository->search($criteria, $context)->getEntities();
+        $existingByName = [];
+        foreach ($existingFields as $field) {
+            $existingByName[$field->getName()] = $field;
+        }
         foreach ($fields as $name => $def) {
-            $criteria = (new Criteria())->addFilter(new EqualsFilter('name', $name));
-            $existing = $customFieldRepository->search($criteria, $context)->first();
-
+            $existing = $existingByName[$name] ?? null;
             $upserts[] = array_merge(
                 [
                     'id' => $existing ? $existing->getId() : Uuid::randomHex(),
@@ -172,7 +174,7 @@ class InfoPlusCommerce extends Plugin
         // Find set ID by name
         $setCriteria = (new Criteria())->addFilter(new EqualsFilter('name', $setName));
         $existingSet = $customFieldSetRepository->search($setCriteria, $context)->first();
-
+        /** @var CustomFieldSetEntity|null $existingSet */
         if (!$existingSet) {
             return; // Nothing to delete
         }
@@ -180,19 +182,51 @@ class InfoPlusCommerce extends Plugin
         $setId = $existingSet->getId();
 
         // Delete the two custom fields if they exist (by ID)
-        foreach (['infoplus_major_group_id', 'infoplus_sub_group_id'] as $name) {
-            $criteria = (new Criteria())->addFilter(new EqualsFilter('name', $name));
-            $existing = $customFieldRepository->search($criteria, $context)->first();
-            if ($existing) {
-                $customFieldRepository->delete([
-                    ['id' => $existing->getId()],
-                ], $context);
-            }
+        $deleteNames = ['infoplus_major_group_id', 'infoplus_sub_group_id'];
+        $criteria = (new Criteria())->addFilter(new EqualsFilter('customFieldSetId', $setId));
+        $criteria->addFilter(new OrFilter(array_map(fn($name) => new EqualsFilter('name', $name), $deleteNames)));
+        /** @var CustomFieldEntity[] $fieldsToDelete */
+        $fieldsToDelete = $customFieldRepository->search($criteria, $context)->getEntities();
+        $deletePayload = [];
+        foreach ($fieldsToDelete as $field) {
+            $deletePayload[] = ['id' => $field->getId()];
+        }
+        if (!empty($deletePayload)) {
+            $customFieldRepository->delete($deletePayload, $context);
         }
 
         // Finally, delete the set itself by ID
         $customFieldSetRepository->delete([
             ['id' => $setId],
         ], $context);
+    }
+
+    private function dropPluginData(Context $context): void
+    {
+        /** @var Connection $connection */
+        $connection = $this->container->get(Connection::class);
+        $schemaManager = $connection->createSchemaManager();
+
+        $tables = [
+            'infoplus_field_definition',
+            'infoplus_category',
+            'infoplus_order_sync',
+            'infoplus_id_mapping',
+        ];
+
+        foreach ($tables as $table) {
+            if ($schemaManager->tablesExist([$table])) {
+                $connection->executeStatement('DROP TABLE IF EXISTS `' . $table . '`');
+            }
+        }
+
+        // Clean plugin migration entries from migration tracking table
+        if ($schemaManager->tablesExist(['migration'])) {
+            // Remove all migration rows for this plugin namespace
+            $connection->executeStatement(
+                'DELETE FROM `migration` WHERE `class` LIKE :classPrefix',
+                ['classPrefix' => 'InfoPlusCommerce\\Migration\\%']
+            );
+        }
     }
 }

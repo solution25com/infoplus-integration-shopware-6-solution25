@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace InfoPlusCommerce\Core\Content\OrderSync;
 
@@ -8,6 +10,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 class OrderSyncEntity extends Entity
 {
     use EntityIdTrait;
+
     protected $id;
     protected string $shopwareOrderId;
     protected int $infoplusId;
