@@ -1,5 +1,5 @@
 {
-    "name": "infoplus-commerce/infoplus-commerce",
+    "name": "solution25/infoplus-commerce",
     "description": "Shopware 6 integration with InfoPlus (ERP/WMS) to synchronize products, categories, customers, inventory, and orders between Shopware and InfoPlus.",
     "type": "shopware-platform-plugin",
     "version": "1.0.9",
