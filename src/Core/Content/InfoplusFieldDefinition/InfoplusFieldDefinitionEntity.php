@@ -9,11 +9,19 @@ class InfoplusFieldDefinitionEntity extends Entity
 {
     use EntityIdTrait;
 
+    /**
+     * @var string
+     */
+    protected $id;
+
     protected string $technicalName;
     protected string $label;
     protected string $type;
     protected bool $isRequired;
-    protected $options;
+    /**
+     * @var array<int,mixed>|null
+     */
+    protected ?array $options = null;
     protected int $position = 0;
     protected bool $active = true;
     protected bool $showInStorefront = false;
@@ -53,11 +61,17 @@ class InfoplusFieldDefinitionEntity extends Entity
     {
         $this->isRequired = $isRequired;
     }
-    public function getOptions()
+    /**
+     * @return array<int,mixed>|null
+     */
+    public function getOptions(): ?array
     {
         return $this->options;
     }
-    public function setOptions($options): void
+    /**
+     * @param array<int,mixed>|null $options
+     */
+    public function setOptions(?array $options): void
     {
         $this->options = $options;
     }

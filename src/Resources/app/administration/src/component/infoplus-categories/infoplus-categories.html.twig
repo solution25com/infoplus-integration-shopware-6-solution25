@@ -29,5 +29,18 @@
                 </template>
             </sw-data-grid>
         </sw-card>
+        <sw-modal v-if="showDeleteModal"
+                  :title="$tc('infoplus.category.deleteModalTitle')"
+                  @modal-close="cancelDeleteCategory">
+            <p>{{ $tc('infoplus.category.deleteConfirmation') }}</p>
+            <template #modal-footer>
+                <sw-button @click="cancelDeleteCategory" size="small">
+                    {{ $tc('global.default.cancel') }}
+                </sw-button>
+                <sw-button @click="confirmDeleteCategory" variant="danger" size="small">
+                    {{ $tc('global.default.delete') }}
+                </sw-button>
+            </template>
+        </sw-modal>
     </div>
 </template>

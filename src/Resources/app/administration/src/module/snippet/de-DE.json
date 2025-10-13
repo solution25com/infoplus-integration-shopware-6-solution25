@@ -26,6 +26,8 @@
       "createNew": "Neue Kategorie erstellen",
       "edit": "Bearbeiten",
       "delete": "Löschen",
+      "deleteModalTitle": "Kategorie löschen",
+      "deleteConfirmation": "Sind Sie sicher, dass Sie diese Kategorie löschen möchten?",
       "columns": {
         "infoplusId": "InfoPlus ID",
         "name": "Name"

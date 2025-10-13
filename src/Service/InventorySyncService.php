@@ -12,9 +12,13 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Content\Product\ProductEntity;
+use Shopware\Core\Content\Product\ProductCollection;
 
 class InventorySyncService
 {
+    /**
+     * @param EntityRepository<ProductCollection> $productRepository
+     */
     public function __construct(
         private readonly ConfigService $configService,
         private readonly InfoplusApiClient $infoplusApiClient,
@@ -24,13 +28,18 @@ class InventorySyncService
     ) {
     }
 
+    /**
+     * @param Context $context
+     * @param array<int|string>|null $ids
+     * @return array<mixed>
+     */
     public function syncInventory(Context $context, ?array $ids = null): array
     {
         if (!($this->configService->get('syncProducts') || $this->configService->get('syncInventory'))) {
             $this->logger->info('[InfoPlus] Inventory sync is disabled in configuration');
             return ['status' => 'error', 'error' => $this->translator->trans('infoplus.service.errors.inventorySyncDisabled')];
         }
-        $criteria = new \Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria($ids);
+        $criteria = new Criteria($ids === null ? null : array_map('strval', $ids));
         $products = $this->productRepository->search($criteria, $context)->getEntities();
         if ($products->count() === 0) {
             $this->logger->info('[InfoPlus] No active products found, skipping inventory sync.');
@@ -57,6 +66,11 @@ class InventorySyncService
         return $returnArray;
     }
 
+    /**
+     * @param array<string,mixed> $infoPlusItem
+     * @param Context $context
+     * @return array<mixed>
+     */
     private function processProduct(array $infoPlusItem, Context $context): array
     {
         $infoPlusProductId = $infoPlusItem['id'] ?? null;

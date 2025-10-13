@@ -2,6 +2,7 @@
 
 namespace InfoPlusCommerce\Service;
 
+use InfoPlusCommerce\Core\Content\InfoplusFieldDefinition\InfoplusFieldDefinitionCollection;
 use InfoPlusCommerce\Core\Content\InfoplusFieldDefinition\InfoplusFieldDefinitionEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -12,13 +13,24 @@ use Shopware\Core\Framework\Uuid\Uuid;
 
 class AdminCustomFieldService
 {
+    /**
+     * @var EntityRepository<InfoplusFieldDefinitionCollection>
+     */
     private EntityRepository $customFieldRepository;
 
+    /**
+     * @param EntityRepository<InfoplusFieldDefinitionCollection> $customFieldRepository
+     */
     public function __construct(EntityRepository $customFieldRepository)
     {
         $this->customFieldRepository = $customFieldRepository;
     }
 
+    /**
+     * @param bool $all
+     * @param Context $context
+     * @return array<int,array<string,mixed>>
+     */
     public function list(bool $all, Context $context): array
     {
         $criteria = new Criteria();
@@ -47,6 +59,11 @@ class AdminCustomFieldService
         return $data;
     }
 
+    /**
+     * @param string $id
+     * @param Context $context
+     * @return array<string,mixed>|null
+     */
     public function get(string $id, Context $context): ?array
     {
         $criteria = new Criteria([$id]);
@@ -71,6 +88,11 @@ class AdminCustomFieldService
         ];
     }
 
+    /**
+     * @param array<string,mixed> $data
+     * @param Context $context
+     * @return void
+     */
     public function create(array $data, Context $context): void
     {
         $allowedTypes = ['text', 'textarea', 'number', 'money', 'boolean', 'select'];
@@ -89,6 +111,12 @@ class AdminCustomFieldService
         $this->customFieldRepository->create([$data], $context);
     }
 
+    /**
+     * @param string $id
+     * @param array<string,mixed> $data
+     * @param Context $context
+     * @return void
+     */
     public function update(string $id, array $data, Context $context): void
     {
         $allowedTypes = ['text', 'textarea', 'number', 'money', 'boolean', 'select'];
@@ -105,21 +133,29 @@ class AdminCustomFieldService
         $this->customFieldRepository->update([$data], $context);
     }
 
+    /**
+     * @param string $id
+     * @param Context $context
+     * @return void
+     */
     public function delete(string $id, Context $context): void
     {
         $this->customFieldRepository->delete([[ 'id' => $id ]], $context);
     }
 
+    /**
+     * @param string|array<mixed> $options
+     * @return array<int,mixed>
+     */
     private function normalizeOptions($options): array
     {
         if (is_string($options)) {
             $normalized = array_map('trim', explode("\n", $options));
-        } elseif (is_array($options)) {
+        } else {
+            $arrayOptions = (array)$options;
             $normalized = array_map(static function ($v) {
                 return is_string($v) ? trim($v) : $v;
-            }, $options);
-        } else {
-            return [];
+            }, $arrayOptions);
         }
 
         return array_values(array_filter($normalized, static function ($v) {

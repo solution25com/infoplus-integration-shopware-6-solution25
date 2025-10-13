@@ -32,6 +32,9 @@ class ConfigService
         return $this->get('carrierId');
     }
 
+    /**
+     * @return array<string,mixed>
+     */
     public function getAll(): array
     {
         return [

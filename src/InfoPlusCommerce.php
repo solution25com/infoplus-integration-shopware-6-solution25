@@ -20,6 +20,9 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\System\CustomField\Aggregate\CustomFieldSet\CustomFieldSetEntity;
 use Shopware\Core\System\CustomField\CustomFieldEntity;
+use Shopware\Core\System\CustomField\Aggregate\CustomFieldSet\CustomFieldSetCollection;
+use Shopware\Core\System\CustomField\CustomFieldCollection;
+use Shopware\Core\System\CustomField\Aggregate\CustomFieldSetRelation\CustomFieldSetRelationCollection;
 
 class InfoPlusCommerce extends Plugin
 {
@@ -51,12 +54,17 @@ class InfoPlusCommerce extends Plugin
     }
     private function createCustomFields(Context $context): void
     {
-        /** @var EntityRepository $customFieldSetRepository */
-        $customFieldSetRepository = $this->container->get('custom_field_set.repository');
-        /** @var EntityRepository $customFieldRepository */
-        $customFieldRepository = $this->container->get('custom_field.repository');
-        /** @var EntityRepository $relationRepository */
-        $relationRepository = $this->container->get('custom_field_set_relation.repository');
+        if ($this->container === null) {
+            throw new \RuntimeException('Container not available');
+        }
+        /** @var \Symfony\Component\DependencyInjection\ContainerInterface $container */
+        $container = $this->container;
+        /** @var EntityRepository<CustomFieldSetCollection> $customFieldSetRepository */
+        $customFieldSetRepository = $container->get('custom_field_set.repository');
+        /** @var EntityRepository<CustomFieldCollection> $customFieldRepository */
+        $customFieldRepository = $container->get('custom_field.repository');
+        /** @var EntityRepository<CustomFieldSetRelationCollection> $relationRepository */
+        $relationRepository = $container->get('custom_field_set_relation.repository');
 
         $setName = 'product_infoplus_data';
 
@@ -164,10 +172,15 @@ class InfoPlusCommerce extends Plugin
 
     private function deleteCustomFields(Context $context): void
     {
-        /** @var EntityRepository $customFieldSetRepository */
-        $customFieldSetRepository = $this->container->get('custom_field_set.repository');
-        /** @var EntityRepository $customFieldRepository */
-        $customFieldRepository = $this->container->get('custom_field.repository');
+        if ($this->container === null) {
+            throw new \RuntimeException('Container not available');
+        }
+        /** @var \Symfony\Component\DependencyInjection\ContainerInterface $container */
+        $container = $this->container;
+        /** @var EntityRepository<CustomFieldSetCollection> $customFieldSetRepository */
+        $customFieldSetRepository = $container->get('custom_field_set.repository');
+        /** @var EntityRepository<CustomFieldCollection> $customFieldRepository */
+        $customFieldRepository = $container->get('custom_field.repository');
 
         $setName = 'product_infoplus_data';
 
@@ -196,13 +209,16 @@ class InfoPlusCommerce extends Plugin
         }
 
         // Finally, delete the set itself by ID
-        $customFieldSetRepository->delete([
-            ['id' => $setId],
-        ], $context);
+         $customFieldSetRepository->delete([
+             ['id' => $setId],
+         ], $context);
     }
 
     private function dropPluginData(Context $context): void
     {
+        if ($this->container === null) {
+            throw new \RuntimeException('Container not available');
+        }
         /** @var Connection $connection */
         $connection = $this->container->get(Connection::class);
         $schemaManager = $connection->createSchemaManager();
@@ -220,7 +236,7 @@ class InfoPlusCommerce extends Plugin
             }
         }
 
-        // Clean plugin migration entries from migration tracking table
+         // Clean plugin migration entries from migration tracking table
         if ($schemaManager->tablesExist(['migration'])) {
             // Remove all migration rows for this plugin namespace
             $connection->executeStatement(

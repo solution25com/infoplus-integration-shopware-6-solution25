@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace InfoPlusCommerce\Service;
 
 use InfoPlusCommerce\Client\InfoplusApiClient;
+use Shopware\Core\Checkout\Customer\CustomerCollection;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -14,6 +15,9 @@ use Psr\Log\LoggerInterface;
 
 class CustomerSyncService
 {
+    /**
+     * @param EntityRepository<CustomerCollection> $customerRepository
+     */
     public function __construct(
         private readonly ConfigService $configService,
         private readonly InfoplusApiClient $infoplusApiClient,
@@ -24,6 +28,11 @@ class CustomerSyncService
     ) {
     }
 
+    /**
+     * @param Context $context
+     * @param array<int|string>|null $ids
+     * @return array<mixed>
+     */
     public function syncCustomers(Context $context, ?array $ids = null): array
     {
         if (!($this->configService->get('syncOrder') || $this->configService->get('syncCustomers'))) {
@@ -31,7 +40,7 @@ class CustomerSyncService
             return ['status' => 'error', 'error' => $this->translator->trans('infoplus.service.errors.customerSyncDisabled')];
         }
         $this->logger->info('[InfoPlus] Sync customers triggered', ['ids' => $ids]);
-        $criteria = new Criteria($ids);
+        $criteria = new Criteria($ids === null ? null : array_map('strval', $ids));
         $criteria->addAssociation('defaultBillingAddress');
         $criteria->addAssociation('defaultBillingAddress.country');
         $criteria->addAssociation('defaultBillingAddress.countryState');
@@ -78,8 +87,8 @@ class CustomerSyncService
                 'street3Province' => '',
                 'city' => $billingAddress->getCity(),
                 'zipCode' => $billingAddress->getZipcode(),
-                'country' => MappingService::mapIsoToInfoplusCountry($billingAddress->getCountry() ? $billingAddress->getCountry()->getIso() : 'US'),
-                'phone' => $customer->getDefaultBillingAddress()->getPhoneNumber(),
+                'country' => MappingService::mapIsoToInfoplusCountry((string)($billingAddress->getCountry()?->getIso() ?? 'US')),
+                'phone' => $billingAddress->getPhoneNumber(),
                 'email' => $customer->getEmail(),
                 'truckCarrierId' => $truckCarrierId,
                 'packageCarrierId' => $packageCarrierId,

@@ -13,9 +13,13 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Psr\Log\LoggerInterface;
 use InfoPlusCommerce\Core\Content\InfoplusCategory\InfoplusCategoryEntity;
+use InfoPlusCommerce\Core\Content\InfoplusCategory\InfoplusCategoryCollection;
 
 class CategorySyncService
 {
+    /**
+     * @param EntityRepository<InfoplusCategoryCollection> $infoplusCategoryRepository
+     */
     public function __construct(
         private readonly ConfigService $configService,
         private readonly InfoplusApiClient $infoplusApiClient,
@@ -25,6 +29,11 @@ class CategorySyncService
     ) {
     }
 
+    /**
+     * @param Context $context
+     * @param array<int|string>|null $ids
+     * @return array<mixed>
+     */
     public function syncCategories(Context $context, ?array $ids = null): array
     {
         if (!$this->configService->get('syncCategories')) {
@@ -32,7 +41,7 @@ class CategorySyncService
             return ['status' => 'error', 'error' => $this->translator->trans('infoplus.service.errors.categorySyncDisabled')];
         }
         $this->logger->info('[InfoPlus] Sync categories triggered', ['ids' => $ids ?? 'all']);
-        $criteria = new Criteria($ids);
+        $criteria = new Criteria($ids === null ? null : array_map('strval', $ids));
         $categories = $this->infoplusCategoryRepository->search($criteria, $context)->getEntities();
 
         $itemCategories = $this->infoplusApiClient->getItemCategories();
@@ -133,6 +142,11 @@ class CategorySyncService
         return $results;
     }
 
+    /**
+     * @param int $isSubCategory
+     * @param Context $context
+     * @return array<int,array<string,mixed>>
+     */
     public function getAllCategories(int $isSubCategory, Context $context): array
     {
         $criteria = new Criteria();
@@ -152,6 +166,12 @@ class CategorySyncService
         return $result;
     }
 
+    /**
+     * @param string $name
+     * @param bool $isSubCategory
+     * @param Context $context
+     * @return array<string,mixed>
+     */
     public function createCategory(string $name, bool $isSubCategory, Context $context): array
     {
         $this->logger->info('[InfoPlus] Creating category', ['name' => $name, 'isSubCategory' => $isSubCategory]);
@@ -195,6 +215,11 @@ class CategorySyncService
         return [ "success" => false, "message" => $this->translator->trans('infoplus.service.errors.categorySyncDisabled') ];
     }
 
+    /**
+     * @param string $id
+     * @param Context $context
+     * @return array<string,mixed>|null
+     */
     public function getCategoryById(string $id, Context $context): ?array
     {
         $this->logger->info('[InfoPlus] Fetching category by ID', ['id' => $id]);
@@ -217,6 +242,12 @@ class CategorySyncService
         ];
     }
 
+    /**
+     * @param string $id
+     * @param string $name
+     * @param Context $context
+     * @return array<string,mixed>
+     */
     public function updateCategory(string $id, string $name, Context $context): array
     {
         $this->logger->info('[InfoPlus] Updating category', ['id' => $id, 'name' => $name]);
@@ -268,6 +299,11 @@ class CategorySyncService
         return [ "success" => false, "message" => $this->translator->trans('infoplus.service.errors.categorySyncDisabled') ];
     }
 
+    /**
+     * @param string $id
+     * @param Context $context
+     * @return array<string,mixed>
+     */
     public function deleteCategory(string $id, Context $context): array
     {
         $this->logger->info('[InfoPlus] Delete category triggered', ['id' => $id]);
@@ -291,6 +327,10 @@ class CategorySyncService
         return [ "success" => false, "message" => $this->translator->trans('infoplus.service.errors.categorySyncDisabled') ];
     }
 
+    /**
+     * @param array<mixed> $categories
+     * @return int
+     */
     private function getMaxCategoryId(array $categories): int
     {
         $maxId = 0;

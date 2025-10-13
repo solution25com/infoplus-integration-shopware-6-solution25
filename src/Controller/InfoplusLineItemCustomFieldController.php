@@ -11,7 +11,9 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 class InfoplusLineItemCustomFieldController extends AbstractController
 {
-    public function __construct(private readonly CartService $cartService) {}
+    public function __construct(private readonly CartService $cartService)
+    {
+    }
 
     #[Route(path: '/store-api/infoplus/cart/line-item/custom-fields', name: 'store-api.infoplus.cart.line-item.custom-fields', methods: ['POST'], defaults: ['_routeScope' => ['store-api']])]
     public function upsertCustomFields(Request $request, SalesChannelContext $salesChannelContext): JsonResponse

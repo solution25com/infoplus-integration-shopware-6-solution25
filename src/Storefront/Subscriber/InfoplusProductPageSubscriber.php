@@ -2,6 +2,7 @@
 
 namespace InfoPlusCommerce\Storefront\Subscriber;
 
+use InfoPlusCommerce\Core\Content\InfoplusFieldDefinition\InfoplusFieldDefinitionCollection;
 use InfoPlusCommerce\Core\Content\InfoplusFieldDefinition\InfoplusFieldDefinitionEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -14,8 +15,14 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class InfoplusProductPageSubscriber implements EventSubscriberInterface
 {
+    /**
+     * @var EntityRepository<InfoplusFieldDefinitionCollection>
+     */
     private EntityRepository $customFieldDefinitionRepository;
 
+    /**
+     * @param EntityRepository<InfoplusFieldDefinitionCollection> $customFieldDefinitionRepository
+     */
     public function __construct(EntityRepository $customFieldDefinitionRepository)
     {
         $this->customFieldDefinitionRepository = $customFieldDefinitionRepository;

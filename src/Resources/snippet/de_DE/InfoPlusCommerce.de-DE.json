@@ -26,6 +26,8 @@
       "createNew": "Neue Kategorie erstellen",
       "edit": "Bearbeiten",
       "delete": "Löschen",
+      "deleteModalTitle": "Kategorie löschen",
+      "deleteConfirmation": "Sind Sie sicher, dass Sie diese Kategorie löschen möchten?",
       "columns": {
         "infoplusId": "InfoPlus ID",
         "name": "Name"
@@ -164,7 +166,7 @@
         "categorySyncDisabled": "Kategoriesynchronisation ist in der Konfiguration deaktiviert",
         "noCategoriesFound": "Keine Kategorien für die Synchronisierung gefunden",
         "productSyncDisabled": "Produktsynchronisation ist in der Konfiguration deaktiviert",
-        "noProductsFound": "Keine Produkte für die Synchronisierung gefunden",
+        "noProductsFound": "Keine Produkte für die Synchronisation gefunden",
         "customerSyncDisabled": "Kundensynchronisation ist in der Konfiguration deaktiviert",
         "noCustomersFound": "Keine Kunden für die Synchronisierung gefunden",
         "inventorySyncDisabled": "Lagerbestandssynchronisation ist in der Konfiguration deaktiviert",

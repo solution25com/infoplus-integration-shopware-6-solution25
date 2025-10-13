@@ -31,6 +31,9 @@ class InfoplusApiClient
         $this->domainLimiter = $domainRateLimiterFactory->create('infoplus_domain_' . (string) $this->configService->get('baseDomain'));
     }
 
+    /**
+     * @return array<string,string>
+     */
     private function getHeaders(): array
     {
         return [
@@ -39,6 +42,10 @@ class InfoplusApiClient
         ];
     }
 
+    /**
+     * @param array<string,mixed> $query
+     * @return array<string,mixed>|null
+     */
     public function get(string $endpoint, array $query = []): ?array
     {
         $this->consumeRateLimit();
@@ -77,6 +84,7 @@ class InfoplusApiClient
     }
 
     /**
+     * @param array<string,mixed> $options
      * @return array<string,mixed>|string
      */
     private function requestWithRetry(string $method, string $endpoint, array $options = [], int $maxAttempts = 3): array|string
@@ -134,6 +142,7 @@ class InfoplusApiClient
     }
 
     /**
+     * @param array<string,mixed> $options
      * @return array<string,mixed>|string
      */
     public function request(string $method, string $endpoint, array $options = []): array|string
@@ -146,11 +155,11 @@ class InfoplusApiClient
      * Fetches all pages of a search endpoint until no more data is returned.
      *
      * @param string $endpoint The API endpoint (e.g., 'v3.0/itemCategory/search')
-     * @param array $initialQuery Initial query parameters
+     * @param array<string,mixed> $initialQuery Initial query parameters
      * @param int $limit Maximum records per page (default 250)
      * @return array<int, array<string, mixed>> All records combined from all pages
      */
-    private function fetchAllPages(string $endpoint, array $initialQuery = [], int $limit = 250): array
+    public function fetchAllPages(string $endpoint, array $initialQuery = [], int $limit = 250): array
     {
         $allRecords = [];
         $page = 1;
@@ -170,10 +179,10 @@ class InfoplusApiClient
                 break; // No more data or error
             }
 
-            $allRecords = array_merge($allRecords, $response);
+            $items = array_values($response);
+            $allRecords = array_merge($allRecords, $items);
             $page++;
 
-            // Break if the last page has fewer records than the limit, indicating the end
             if (\count($response) < $limit) {
                 break;
             }
@@ -187,31 +196,51 @@ class InfoplusApiClient
         return $allRecords;
     }
 
+    /**
+     * @return array<string,mixed>
+     */
     public function getLineOfBusiness(): array
     {
         return $this->get('v3.0/lineOfBusiness/search') ?? [];
     }
 
+    /**
+     * @return array<string,mixed>
+     */
     public function getWarehouses(): array
     {
         return $this->get('v3.0/warehouse/search') ?? [];
     }
 
+    /**
+     * @param array<string,mixed> $query
+     * @return array<string,mixed>
+     */
     public function getCarriers(array $query = []): array
     {
         return $this->get('v3.0/carrier/search', $query) ?? [];
     }
 
+    /**
+     * @return array<string,mixed>|null
+     */
     public function getItem(int $id): ?array
     {
         return $this->get('v3.0/item/' . $id);
     }
 
+    /**
+     * @param array<string,mixed> $query
+     * @return array<int, array<string, mixed>>
+     */
     public function searchItems(array $query = []): array
     {
         return $this->fetchAllPages('v3.0/item/search', $query);
     }
 
+    /**
+     * @return array<string,mixed>|null
+     */
     public function getBySKU(int $lobId, string $sku): ?array
     {
         $query = [
@@ -239,11 +268,18 @@ class InfoplusApiClient
         return $this->request('PUT', 'v3.0/item', ['json' => $data]);
     }
 
+    /**
+     * @return array<string,mixed>|string
+     */
     public function deleteItem(int $id): array|string
     {
         return $this->request('DELETE', 'v3.0/item/' . $id);
     }
 
+    /**
+     * @param array<string,mixed> $query
+     * @return array<int, array<string, mixed>>
+     */
     public function searchItemCategories(array $query = []): array
     {
         return $this->fetchAllPages('v3.0/itemCategory/search', $query);
@@ -267,28 +303,41 @@ class InfoplusApiClient
         return $this->request('PUT', 'v3.0/itemCategory', ['json' => $data]);
     }
 
+    /**
+     * @return array<string,mixed>|string
+     */
     public function deleteItemCategory(int $id): array|string
     {
         return $this->request('DELETE', 'v3.0/itemCategory/' . $id);
     }
 
+    /**
+     * @return array<string,mixed>|string
+     */
     public function deleteItemSubCategory(int $id): array|string
     {
         return $this->request('DELETE', 'v3.0/itemSubCategory/' . $id);
     }
 
+    /**
+     * @param array<string,mixed> $query
+     * @return array<int, array<string, mixed>>
+     */
     public function searchCustomers(array $query = []): array
     {
         return $this->fetchAllPages('v3.0/customer/search', $query);
     }
 
+    /**
+     * @return array<string,mixed>|null
+     */
     public function getCustomerByCustomerNo(string $lobId, string $customerNo): ?array
     {
         $query = [
             'filter' => "lobId eq $lobId and customerNo eq '$customerNo'"
         ];
         $customers = $this->searchCustomers($query);
-        return !empty($customers) ? $customers[0] : null;
+        return !empty($customers) ? array_values($customers)[0] : null;
     }
 
     /**
@@ -309,21 +358,31 @@ class InfoplusApiClient
         return $this->request('PUT', 'v3.0/customer', ['json' => $data]);
     }
 
+    /**
+     * @return array<string,mixed>|string
+     */
     public function deleteCustomer(int $id): array|string
     {
         return $this->request('DELETE', 'v3.0/customer/' . $id);
     }
 
+    /**
+     * @param array<string,mixed> $query
+     * @return array<int, array<string, mixed>>
+     */
     public function searchOrders(array $query = []): array
     {
         return $this->fetchAllPages('v3.0/order/search', $query);
     }
 
+    /**
+     * @return array<string,mixed>|null
+     */
     public function getOrderByOrderNo(int $orderNo): ?array
     {
         $query = ['filter' => "orderNo eq $orderNo"];
         $orders = $this->searchOrders($query);
-        return !empty($orders) ? $orders[0] : null;
+        return !empty($orders) ? array_values($orders)[0] : null;
     }
 
     /**
@@ -344,11 +403,18 @@ class InfoplusApiClient
         return $this->request('PUT', 'v3.0/order', ['json' => $data]);
     }
 
+    /**
+     * @return array<string,mixed>|string
+     */
     public function deleteOrder(int $id): array|string
     {
         return $this->request('DELETE', 'v3.0/order/' . $id);
     }
 
+    /**
+     * @param array<string,mixed> $query
+     * @return array<int, array<string, mixed>>
+     */
     public function searchInventoryAdjustments(array $query = []): array
     {
         return $this->fetchAllPages('v3.0/inventoryAdjustment/search', $query);
@@ -368,11 +434,19 @@ class InfoplusApiClient
         $this->httpClient = $client;
     }
 
+    /**
+     * @param array<string,mixed> $filter
+     * @return array<int, array<string, mixed>>
+     */
     public function getItemCategories(array $filter = []): array
     {
         return $this->fetchAllPages('v3.0/itemCategory/search', $filter);
     }
 
+    /**
+     * @param array<string,mixed> $filter
+     * @return array<int, array<string, mixed>>
+     */
     public function getItemSubCategories(array $filter = []): array
     {
         return $this->fetchAllPages('v3.0/itemSubCategory/search', $filter);

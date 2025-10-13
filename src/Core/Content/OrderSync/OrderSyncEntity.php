@@ -11,6 +11,9 @@ class OrderSyncEntity extends Entity
 {
     use EntityIdTrait;
 
+    /**
+     * @var String
+     */
     protected $id;
     protected string $shopwareOrderId;
     protected int $infoplusId;

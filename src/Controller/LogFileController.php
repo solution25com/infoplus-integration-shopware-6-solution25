@@ -20,7 +20,14 @@ class LogFileController extends AbstractController
 
     public function __construct(ParameterBagInterface $params, RequestStack $requestStack)
     {
-        $this->logsDir = (string) $params->get('kernel.logs_dir');
+        $value = $params->get('kernel.logs_dir');
+        if (is_string($value)) {
+            $this->logsDir = $value;
+        } elseif (is_scalar($value)) {
+            $this->logsDir = (string) $value;
+        } else {
+            $this->logsDir = '';
+        }
         $this->requestStack = $requestStack;
     }
 

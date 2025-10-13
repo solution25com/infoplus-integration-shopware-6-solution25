@@ -7,6 +7,7 @@ namespace InfoPlusCommerce\Service;
 use InfoPlusCommerce\Core\Content\IdMapping\IdMappingCollection;
 use InfoPlusCommerce\Core\Content\IdMapping\IdMappingEntity;
 use InfoPlusCommerce\Core\Content\OrderSync\OrderSyncEntity;
+use InfoPlusCommerce\Core\Content\OrderSync\OrderSyncCollection;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Metric\MaxAggregation;
@@ -18,6 +19,10 @@ use Shopware\Core\Framework\Uuid\Uuid;
 
 class IdMappingService
 {
+    /**
+     * @param EntityRepository<IdMappingCollection> $idMappingRepository
+     * @param EntityRepository<OrderSyncCollection> $orderSyncRepository
+     */
     public function __construct(
         private readonly EntityRepository $idMappingRepository,
         private readonly EntityRepository $orderSyncRepository
@@ -36,6 +41,12 @@ class IdMappingService
         return $entity?->getInfoplusId();
     }
 
+    /**
+     * @param string $entityType
+     * @param string $shopwareId
+     * @param Context $context
+     * @return array<string,mixed>|null
+     */
     public function getInfoplusInfo(string $entityType, string $shopwareId, Context $context): ?array
     {
         $criteria = new Criteria();
@@ -45,14 +56,19 @@ class IdMappingService
         );
         /** @var IdMappingEntity|null $result */
         $result = $this->idMappingRepository->search($criteria, $context)->first();
-        return $result ? [
+        if (!$result) {
+            return null;
+        }
+        $createdAt = $result->getCreatedAt();
+        $updatedAt = $result->getUpdatedAt();
+        return [
             'id' => $result->getId(),
             'entity_type' => $result->getEntityType(),
             'shopware_id' => $result->getShopwareId(),
             'infoplus_id' => $result->getInfoplusId(),
-            'created_at' => $result->getCreatedAt()->format('Y-m-d H:i:s'),
-            'updated_at' => $result->getUpdatedAt()->format('Y-m-d H:i:s')
-        ] : null;
+            'created_at' => $createdAt?->format('Y-m-d H:i:s'),
+            'updated_at' => $updatedAt?->format('Y-m-d H:i:s')
+        ];
     }
 
     public function createInfoplusId(string $entityType, string $shopwareId, Context $context, ?int $infoplusId = null): int
@@ -65,9 +81,14 @@ class IdMappingService
                 'infoplusId'
             ));
             $aggregations = $this->idMappingRepository->aggregate($criteria, $context);
+            /** @var MaxResult|null $maxAgg */
             $maxAgg = $aggregations->get('max_infoplus_id');
-            $maxId = ($maxAgg instanceof MaxResult) ? $maxAgg->getMax() : null;
-            $infoplusId = ($maxId !== null) ? ((int)$maxId + 1) : 1;
+            $maxId = $maxAgg?->getMax();
+            if ($maxId === null) {
+                $infoplusId = 1;
+            } else {
+                $infoplusId = (int)$maxId + 1;
+            }
         }
         $existing = $this->getInfoplusInfo($entityType, $shopwareId, $context);
         if ($existing) {
@@ -208,23 +229,37 @@ class IdMappingService
         return $orderSync?->getInfoplusId();
     }
 
+    /**
+     * @param string $shopwareOrderId
+     * @param Context $context
+     * @return array<string,mixed>|null
+     */
     public function getSyncedOrder(string $shopwareOrderId, Context $context): ?array
     {
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsFilter('shopwareOrderId', $shopwareOrderId));
         /** @var OrderSyncEntity|null $result */
         $result = $this->orderSyncRepository->search($criteria, $context)->first();
-        return $result ? [
+        if (!$result) {
+            return null;
+        }
+        $syncDate = $result->getSyncDate();
+        return [
             'id' => $result->getId(),
             'shopware_order_id' => $result->getShopwareOrderId(),
             'infoplus_id' => $result->getInfoplusId(),
-            'sync_date' => $result->getSyncDate()->format('Y-m-d H:i:s'),
+            'sync_date' => $syncDate->format('Y-m-d H:i:s'),
             'order_payment_status' => $result->getOrderPaymentStatus(),
             'order_shipping_status' => $result->getOrderShippingStatus(),
             'order_status' => $result->getOrderStatus()
-        ] : null;
+        ];
     }
 
+    /**
+     * @param string $shopwareOrderId
+     * @param Context $context
+     * @return array<string,mixed>|null
+     */
     public function getOrderSyncRecord(string $shopwareOrderId, Context $context): ?array
     {
         $criteria = new Criteria();
@@ -232,16 +267,20 @@ class IdMappingService
 
         /** @var OrderSyncEntity|null $result */
         $result = $this->orderSyncRepository->search($criteria, $context)->first();
-        return $result ? [
+        if (!$result) {
+            return null;
+        }
+        $syncDate = $result->getSyncDate();
+        return [
             'order_payment_status' => $result->getOrderPaymentStatus(),
             'order_shipping_status' => $result->getOrderShippingStatus(),
             'order_status' => $result->getOrderStatus(),
-            'sync_date' => $result->getSyncDate()->format('Y-m-d H:i:s'),
-        ] : null;
+            'sync_date' => $syncDate->format('Y-m-d H:i:s'),
+        ];
     }
 
     /**
-     * @return array<int, mixed>
+     * @return array<int,mixed>
      */
     public function getPendingShipmentOrders(Context $context, ?string $id = null): array
     {
@@ -290,9 +329,9 @@ class IdMappingService
     /**
      * Batch fetch infoplus IDs for a set of products.
      * @param string $entityType
-     * @param array $shopwareIds
+     * @param array<int|string> $shopwareIds
      * @param Context $context
-     * @return array shopwareId => infoplusId
+     * @return array<string,int>
      */
     public function getInfoplusIdsForProducts(string $entityType, array $shopwareIds, Context $context): array
     {

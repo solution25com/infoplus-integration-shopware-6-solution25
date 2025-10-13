@@ -15,21 +15,27 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Checkout\Order\OrderEntity;
+use Shopware\Core\Checkout\Order\OrderCollection;
 
 class OrderSyncService
 {
+    /**
+     * @param EntityRepository<OrderCollection> $orderRepository
+     */
     public function __construct(
-        private readonly ConfigService        $configService,
-        private readonly InfoplusApiClient    $infoplusApiClient,
-        private readonly LoggerInterface      $logger,
-        private readonly EntityRepository     $orderRepository,
-        private readonly IdMappingService     $idMappingService,
-        private readonly TranslatorInterface  $translator,
+        private readonly ConfigService $configService,
+        private readonly InfoplusApiClient $infoplusApiClient,
+        private readonly LoggerInterface $logger,
+        private readonly EntityRepository $orderRepository,
+        private readonly IdMappingService $idMappingService,
+        private readonly TranslatorInterface $translator,
         private readonly StateMachineRegistry $stateMachineRegistry,
-    )
-    {
+    ) {
     }
 
+    /**
+     * @return array<mixed>
+     */
     public function orderSyncStart(Context $context): array
     {
         if (!$this->configService->get('syncOrders')) {
@@ -48,6 +54,10 @@ class OrderSyncService
         return $this->syncOrders($orderIds, $context);
     }
 
+    /**
+     * @param array<int|string> $orderIds
+     * @return array<mixed>
+     */
     public function syncOrders(array $orderIds, Context $context): array
     {
         if (!$this->configService->get('syncOrders')) {
@@ -55,7 +65,7 @@ class OrderSyncService
             return ['status' => 'error', 'error' => $this->translator->trans('infoplus.service.errors.orderSyncDisabled')];
         }
         $this->logger->info('[InfoPlus] Sync orders triggered', ['orderIds' => $orderIds]);
-        $criteria = new Criteria($orderIds);
+        $criteria = new Criteria(array_map('strval', $orderIds));
         $criteria->addAssociation('lineItems.product');
         $criteria->addAssociation('shippingAddress');
         $criteria->addAssociation('billingAddress');
@@ -81,11 +91,15 @@ class OrderSyncService
         foreach ($orders as $order) {
             /** @var OrderEntity $order */
             $currentOrderStatus = $order->getStateMachineState() ? $order->getStateMachineState()->getTechnicalName() : null;
-            $currentShippingStatus = $order->getDeliveries()->first() && $order->getDeliveries()->first()->getStateMachineState()
-                ? $order->getDeliveries()->first()->getStateMachineState()->getTechnicalName()
+
+            $firstDelivery = $order->getDeliveries()?->first();
+            $currentShippingStatus = $firstDelivery && $firstDelivery->getStateMachineState()
+                ? $firstDelivery->getStateMachineState()->getTechnicalName()
                 : null;
-            $currentPaymentStatus = $order->getTransactions()->first() && $order->getTransactions()->first()->getStateMachineState()
-                ? $order->getTransactions()->first()->getStateMachineState()->getTechnicalName()
+
+            $firstTransaction = $order->getTransactions()?->first();
+            $currentPaymentStatus = $firstTransaction && $firstTransaction->getStateMachineState()
+                ? $firstTransaction->getStateMachineState()->getTechnicalName()
                 : null;
             $syncedOrder = $this->idMappingService->getSyncedOrderId($order->getId(), $context);
 
@@ -128,7 +142,7 @@ class OrderSyncService
 
             $lineItems = [];
             $totalDiscount = 0.0;
-            foreach ($order->getLineItems() as $item) {
+            foreach ($order->getLineItems() ?? [] as $item) {
                 if ($item->getProduct() && $item->getProduct()->getProductNumber()) {
                     $unitCost = $item->getPrice()?->getUnitPrice() ?? $item->getUnitPrice();
                     $unitSell = $item->getUnitPrice();
@@ -149,7 +163,7 @@ class OrderSyncService
             $billingAddress = $order->getBillingAddress();
 
             $carrierId = $this->configService->getDefaultCarrierId();
-            $firstDelivery = $order->getDeliveries()->first();
+            $firstDelivery = $order->getDeliveries()?->first();
             if ($firstDelivery && $firstDelivery->getShippingMethod()) {
                 $customFields = $firstDelivery->getShippingMethod()->getCustomFields() ?: [];
                 if (isset($customFields['infoplus_carrier_id']) && $customFields['infoplus_carrier_id'] !== '') {
@@ -229,6 +243,11 @@ class OrderSyncService
         return $results;
     }
 
+    /**
+     * @param Context $context
+     * @param string|null $id
+     * @return array<mixed>
+     */
     public function syncPaidOrders(Context $context, ?string $id = null): array
     {
         if (!$this->configService->get("syncOrders")) {
@@ -243,6 +262,10 @@ class OrderSyncService
         return $this->processOrders($syncedOrders, $context);
     }
 
+    /**
+     * @param array<mixed> $syncedOrders
+     * @return array<mixed>
+     */
     private function processOrders(array $syncedOrders, Context $context): array
     {
         $returnArray = [];
@@ -348,7 +371,12 @@ class OrderSyncService
         return $returnArray;
     }
 
-    private function processOrder(string $shopwareOrderId, $infoPlusOrder, Context $context, string $entity, string $action, string $targetState): array
+    /**
+     * @param string $shopwareOrderId
+     * @param array<mixed> $infoPlusOrder
+     * @return array<mixed>
+     */
+    private function processOrder(string $shopwareOrderId, array $infoPlusOrder, Context $context, string $entity, string $action, string $targetState): array
     {
         $orderNo = $infoPlusOrder['orderNo'] ?? 'unknown';
 
@@ -372,7 +400,7 @@ class OrderSyncService
         if ($entity === 'order') {
             $entityId = $shopwareOrderId;
         } elseif ($entity === 'order_delivery') {
-            $delivery = $order->getDeliveries()->first();
+            $delivery = $order->getDeliveries()?->first();
             if (!$delivery) {
                 $this->logger->warning('[InfoPlus] No delivery found for order', ['orderId' => $shopwareOrderId]);
                 return [
@@ -384,7 +412,7 @@ class OrderSyncService
             }
             $entityId = $delivery->getId();
         } elseif ($entity === 'order_transaction') {
-            $transaction = $order->getTransactions()->first();
+            $transaction = $order->getTransactions()?->first();
             if (!$transaction) {
                 $this->logger->warning('[InfoPlus] No transaction found for order', ['orderId' => $shopwareOrderId]);
                 return [
@@ -405,7 +433,7 @@ class OrderSyncService
             // Perform state transition
             $transition = new Transition(
                 $entity,
-                $entityId,
+                (string) $entityId,
                 $action,
                 'stateId'
             );

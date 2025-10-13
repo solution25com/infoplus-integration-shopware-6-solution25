@@ -9,6 +9,7 @@ use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Checkout\Order\OrderCollection;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -20,6 +21,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class SyncCommand extends Command
 {
+    /**
+     * @param EntityRepository<OrderCollection> $orderRepository
+     */
     public function __construct(
         private readonly SyncService $syncService,
         private readonly LoggerInterface $logger,
@@ -43,8 +47,9 @@ class SyncCommand extends Command
                 $output->writeln('No customers found for synchronization.');
                 $this->logger->warning('[InfoPlus] No customers found for sync');
             } else {
+                /** @var array<string,mixed> $result */
                 foreach ($customerResults as $result) {
-                    if (($result['success'] ?? false) === true) {
+                    if (isset($result['success']) && $result['success'] === true) {
                         $output->writeln(sprintf('Customer %s synced successfully.', $result['customerNo'] ?? '-'));
                     } else {
                         $output->writeln(sprintf('Failed to sync customer %s: %s', $result['customerNo'] ?? '-', $result['error'] ?? 'unknown error'));
@@ -68,8 +73,9 @@ class SyncCommand extends Command
                 $output->writeln('No categories found for synchronization.');
                 $this->logger->warning('[InfoPlus] No categories found for sync');
             } else {
+                /** @var array<string,mixed> $result */
                 foreach ($categoryResults as $result) {
-                    if (($result['success'] ?? false) === true) {
+                    if (isset($result['success']) && $result['success'] === true) {
                         $output->writeln(sprintf('Category %s (%s) synced successfully.', $result['name'] ?? '-', $result['type'] ?? '-'));
                     } else {
                         $output->writeln(sprintf('Failed to sync category %s (%s): %s', $result['name'] ?? '-', $result['type'] ?? '-', $result['error'] ?? 'unknown error'));
@@ -93,8 +99,9 @@ class SyncCommand extends Command
                 $output->writeln('No products found for synchronization.');
                 $this->logger->warning('[InfoPlus] No products found for sync');
             } else {
+                /** @var array<string,mixed> $result */
                 foreach ($productResults as $result) {
-                    if (($result['success'] ?? false) === true) {
+                    if (isset($result['success']) && $result['success'] === true) {
                         $output->writeln(sprintf('Product %s synced successfully.', $result['sku'] ?? '-'));
                     } else {
                         $output->writeln(sprintf('Failed to sync product %s: %s', $result['sku'] ?? '-', $result['error'] ?? 'unknown error'));
@@ -115,7 +122,8 @@ class SyncCommand extends Command
         try {
             $criteria = new Criteria();
             $orderIds = $this->orderRepository->searchIds($criteria, $context)->getIds();
-
+            $orderIds = array_map(fn($id): string => is_array($id) ? (string) (reset($id) ?: '') : (string) $id, $orderIds);
+            /** @var array<string> $orderIds */
             if (empty($orderIds)) {
                 $output->writeln('No orders found for synchronization.');
                 $this->logger->warning('[InfoPlus] No orders found for sync');
@@ -125,8 +133,9 @@ class SyncCommand extends Command
                     $output->writeln('No order found for synchronization.');
                     $this->logger->warning('[InfoPlus] No orders found for sync');
                 } else {
+                    /** @var array<string,mixed> $result */
                     foreach ($orderResults as $result) {
-                        if (($result['success'] ?? false) === true) {
+                        if (isset($result['success']) && $result['success'] === true) {
                             $output->writeln(sprintf('Order %s synced successfully.', $result['orderNo'] ?? '-'));
                         } else {
                             $output->writeln(sprintf('Failed to sync order %s: %s', $result['orderNo'] ?? '-', $result['error'] ?? 'unknown error'));

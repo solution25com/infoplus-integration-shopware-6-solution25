@@ -2,6 +2,7 @@
 
 namespace InfoPlusCommerce\Storefront\Subscriber;
 
+use InfoPlusCommerce\Core\Content\InfoplusFieldDefinition\InfoplusFieldDefinitionCollection;
 use InfoPlusCommerce\Core\Content\InfoplusFieldDefinition\InfoplusFieldDefinitionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Checkout\Order\OrderEntity;
@@ -16,7 +17,12 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class InfoplusOrderDetailSubscriber implements EventSubscriberInterface
 {
-    public function __construct(private readonly EntityRepository $customFieldDefinitionRepository) {}
+    /**
+     * @param EntityRepository<InfoplusFieldDefinitionCollection> $customFieldDefinitionRepository
+     */
+    public function __construct(private readonly EntityRepository $customFieldDefinitionRepository)
+    {
+    }
 
     public static function getSubscribedEvents(): array
     {
@@ -73,9 +79,9 @@ class InfoplusOrderDetailSubscriber implements EventSubscriberInterface
         foreach ($defs as $def) {
             /** @var InfoplusFieldDefinitionEntity $def */
             $map[$def->getTechnicalName()] = [
-                'label' => $def->getLabel() ?? $def->getTechnicalName(),
-                'type' => $def->getType() ?? 'text',
-                'options' => $def->getOptions() ?? []
+                'label' => $def->getLabel(),
+                'type' => $def->getType(),
+                'options' => $def->getOptions()
             ];
         }
 
@@ -88,16 +94,14 @@ class InfoplusOrderDetailSubscriber implements EventSubscriberInterface
                 }
                 $tech = substr((string)$key, strlen('infoplus_'));
                 $def = $map[$tech] ?? null;
-                if(!$def) {
+                if (!$def) {
                     continue;
                 }
-                $label = $def['label'] ?? $tech;
-                $type = $def['type'] ?? 'text';
-                $formatted = $this->formatValue($value, $type);
+                $formatted = $this->formatValue($value, $def['type']);
                 $list[] = [
                     'technicalName' => $tech,
-                    'label' => $label,
-                    'type' => $type,
+                    'label' => $def['label'],
+                    'type' => $def['type'],
                     'value' => $formatted,
                 ];
             }
@@ -118,4 +122,3 @@ class InfoplusOrderDetailSubscriber implements EventSubscriberInterface
         return (string)($value ?? '');
     }
 }
-

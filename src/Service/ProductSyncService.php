@@ -7,6 +7,7 @@ namespace InfoPlusCommerce\Service;
 use InfoPlusCommerce\Client\InfoplusApiClient;
 use InfoPlusCommerce\Core\Content\InfoplusCategory\InfoplusCategoryEntity;
 use InfoPlusCommerce\Core\Content\InfoplusCategory\InfoplusCategoryCollection;
+use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -17,6 +18,10 @@ use Psr\Log\LoggerInterface;
 
 class ProductSyncService
 {
+    /**
+     * @param EntityRepository<ProductCollection> $productRepository
+     * @param EntityRepository<InfoplusCategoryCollection> $infoplusCategoryRepository
+     */
     public function __construct(
         private readonly ConfigService $configService,
         private readonly InfoplusApiClient $infoplusApiClient,
@@ -29,6 +34,10 @@ class ProductSyncService
     ) {
     }
 
+    /**
+     * @param array<int|string>|null $ids
+     * @return array<mixed>
+     */
     public function syncProducts(Context $context, ?array $ids = null): array
     {
         if (!($this->configService->get('syncOrders') || $this->configService->get('syncProducts'))) {
@@ -36,7 +45,7 @@ class ProductSyncService
             return ['status' => 'error', 'error' => $this->translator->trans('infoplus.service.errors.productSyncDisabled')];
         }
         $this->logger->info('[InfoPlus] Sync products triggered', ['ids' => $ids ?? 'all']);
-        $criteria = new Criteria($ids);
+        $criteria = new Criteria($ids === null ? null : array_map('strval', $ids));
         $criteria->addAssociation('price');
         $products = $this->productRepository->search($criteria, $context)->getEntities();
 
@@ -51,10 +60,8 @@ class ProductSyncService
         $productIds = [];
         $majorGroupIds = [];
         $subGroupIds = [];
+        /** @var ProductEntity $product */
         foreach ($products as $product) {
-            if (!($product instanceof ProductEntity)) {
-                continue;
-            }
             $productIds[] = $product->getId();
             $customFields = $product->getCustomFields() ?: [];
             $majorGroupId = $customFields['infoplus_major_group_id'] ?? null;
@@ -82,10 +89,8 @@ class ProductSyncService
         $idMappingDeletes = [];
         $idMappingCreates = [];
         $idMappingUpdates = [];
+        /** @var ProductEntity $product */
         foreach ($products as $product) {
-            if (!($product instanceof ProductEntity)) {
-                continue;
-            }
             $sku = $product->getProductNumber();
             $itemDescription = $product->getName() ?: 'Default Product Description';
             $infoplusId = $idMappings[$product->getId()] ?? null;

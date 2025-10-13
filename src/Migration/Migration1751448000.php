@@ -25,4 +25,3 @@ class Migration1751448000 extends MigrationStep
         // No destructive update
     }
 }
-

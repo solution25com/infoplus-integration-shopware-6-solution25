@@ -117,7 +117,7 @@ Shopware.Component.register('sw-order-create-customfields', {
                                 if (parsed.savedAt && (now - parsed.savedAt) > TTL) {
                                     localStorage.removeItem(k);
                                 }
-                            } catch (e) {
+                            } catch {
                                 localStorage.removeItem(k);
                             }
                         }

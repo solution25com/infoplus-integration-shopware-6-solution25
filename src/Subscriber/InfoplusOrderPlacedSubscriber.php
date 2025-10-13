@@ -5,11 +5,18 @@ namespace InfoPlusCommerce\Subscriber;
 use Shopware\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 
 class InfoplusOrderPlacedSubscriber implements EventSubscriberInterface
 {
+    /**
+     * @var EntityRepository<OrderLineItemCollection>
+     */
     private EntityRepository $orderLineItemRepository;
 
+    /**
+     * @param EntityRepository<OrderLineItemCollection> $orderLineItemRepository
+     */
     public function __construct(EntityRepository $orderLineItemRepository)
     {
         $this->orderLineItemRepository = $orderLineItemRepository;
@@ -54,4 +61,3 @@ class InfoplusOrderPlacedSubscriber implements EventSubscriberInterface
         $this->orderLineItemRepository->update($updates, $context);
     }
 }
-

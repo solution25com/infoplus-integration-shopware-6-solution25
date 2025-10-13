@@ -15,8 +15,12 @@ class SyncPaidOrdersTaskHandler
 {
     public function __construct(
         private readonly SyncService $syncService
-    ) {}
+    ) {
+    }
 
+    /**
+     * @return iterable<class-string>
+     */
     public static function getHandledMessages(): iterable
     {
         return [SyncPaidOrdersTask::class];
